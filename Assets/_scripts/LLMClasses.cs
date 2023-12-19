@@ -19,7 +19,7 @@ public class Choice
 public class Message
 {
     public string role;
-    public string content;
+    [TextArea(3, 1000)] public string content;
 }
 
 public class LLMInput

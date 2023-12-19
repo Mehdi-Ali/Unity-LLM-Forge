@@ -14,35 +14,36 @@ public class LMStudioConnection : MonoBehaviour
 
 
     [SerializeField] string url = "http://localhost:1234/v1/chat/completions";
-    [SerializeField, TextArea(3, 10)] private string _systemMessage = "Always answer in rhymes.";
-    [SerializeField, TextArea(3, 10)] private string _userMessage = "Introduce yourself.";
+    [SerializeField, TextArea(3, 20)] private string _systemMessage;
+    [SerializeField, TextArea(3, 1000)] private string _userMessage;
+    [SerializeField, TextArea(3, 1000)] private string _assistantMessage;
     [SerializeField, Range(0, 1)] float _temperature = 0.7f;
     [SerializeField] int _max_tokens = -1;
     [SerializeField] bool _stream = false;
 
-    private string _assistantMessage = "we are talking about the weather";
-    private List<Message> _chatHistory = new List<Message>();
+    public  List<Message> _chatHistory = new List<Message>();
 
 
 
-    public void Start() => InitializeChat();
-
-    private void InitializeChat()
+    [Button]
+    private void InitializeNewChat()
     {
-        StartCoroutine(LLMChat(_systemMessage, " ", _userMessage));
+        _chatHistory.Clear();
+        _chatHistory.Add(new Message { role = "system", content = _systemMessage });
+        _chatHistory.Add(new Message { role = "user", content = _userMessage });
+        StartCoroutine(LLMChat());
     }
 
 
     [Button]
     public void SendMessage()
     {
-        StartCoroutine(LLMChat(_systemMessage, _assistantMessage, _userMessage));
+        _chatHistory.Add(new Message { role = "user", content = _userMessage });
+        StartCoroutine(LLMChat());
     }
 
-
-    private IEnumerator LLMChat(string systemMessage, string assistantMessage, string userMessage)
+    private IEnumerator LLMChat()
     {
-
         float temperature = _temperature;
         int max_tokens = _max_tokens;
         bool stream = _stream;
@@ -50,24 +51,7 @@ public class LMStudioConnection : MonoBehaviour
         var llm = UnityWebRequest.PostWwwForm(url, "POST");
         string jsonMessage = JsonConvert.SerializeObject(new LLMInput
         {
-            messages = new List<Message>
-            {
-                new Message
-                {
-                    role = "system",
-                    content = systemMessage
-                },
-                new Message
-                {
-                    role = "user",
-                    content = userMessage
-                },
-                new Message
-                {
-                    role = "assistant",
-                    content = assistantMessage
-                }
-            },
+            messages = _chatHistory,
             temperature = temperature,
             max_tokens = max_tokens,
             stream = stream
@@ -77,7 +61,7 @@ public class LMStudioConnection : MonoBehaviour
         llm.uploadHandler = new UploadHandlerRaw(bytesMessage);
         llm.SetRequestHeader("Content-Type", "application/json");
 
-        _output.text = "Sending message...";
+        DisplayResponse("Sending message...");
 
         yield return llm.SendWebRequest();
 
@@ -85,13 +69,19 @@ public class LMStudioConnection : MonoBehaviour
         {
             var jsonResponse = JsonUtility.FromJson<Response>(llm.downloadHandler.text);
             string messageContent = jsonResponse.choices[0].message.content;
-            _output.text = messageContent;
+            _chatHistory.Add(new Message { role = "assistant", content = messageContent });
+            DisplayResponse(messageContent);
         }
 
         else
-            _output.text = "Error: " + llm.error;
+            DisplayResponse("Error: " + llm.error);
     }
 
+    private void DisplayResponse(string message)
+    {
+        _output.text = message;
+        _assistantMessage = message;
+    }
 }
 
 

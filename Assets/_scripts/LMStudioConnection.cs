@@ -19,25 +19,27 @@ public class LMStudioConnection : MonoBehaviour
     [SerializeField] const string _max_tokens = "-1";
     [SerializeField] const string _stream = "false";
 
+    private string _assistantMessage = "we are talking about the weather";
+    private List<Message> _chatHistory = new List<Message>();
 
-    private List<string> discussionHistory = new List<string>();
 
 
+    public void Start() => InitializeChat();
 
-    public void Start()
+    private void InitializeChat()
     {
-        StartCoroutine(PostRequest(_systemMessage, _userMessage, _temperature, _max_tokens, _stream));
+        StartCoroutine(LLMChat(_systemMessage, "    ", _userMessage, _temperature, _max_tokens, _stream));
     }
+
 
     [Button]
     public void SendMessage()
     {
-        // maybe we don't need to send the system message every time?
-        StartCoroutine(PostRequest(_systemMessage, _userMessage, _temperature, _max_tokens, _stream));
+        StartCoroutine(LLMChat(_systemMessage, _assistantMessage, _userMessage, _temperature, _max_tokens, _stream));
     }
 
 
-    private IEnumerator PostRequest(string systemMessage, string userMessage, string temperature = _temperature, string max_tokens = _max_tokens, string stream = _stream)
+    private IEnumerator LLMChat(string systemMessage,string assistantMessage, string userMessage, string temperature = _temperature, string max_tokens = _max_tokens, string stream = _stream)
     {
         var llm = UnityWebRequest.PostWwwForm(url, "POST");
         string jsonMessage = $@"
@@ -50,6 +52,10 @@ public class LMStudioConnection : MonoBehaviour
                             {{
                             ""role"": ""user"",
                             ""content"": ""{userMessage}""
+                            }},
+                            {{
+                            ""role"": ""assistant"",
+                            ""content"": ""{assistantMessage}""
                             }}
                         ],
                         ""temperature"": {temperature},	
@@ -65,15 +71,15 @@ public class LMStudioConnection : MonoBehaviour
         
         yield return llm.SendWebRequest();
 
-        if (llm.result != UnityWebRequest.Result.Success)
-            _output.text = "Error: " + llm.error;
-
-        else
+        if (llm.result == UnityWebRequest.Result.Success)
         {
             var jsonResponse = JsonUtility.FromJson<Response>(llm.downloadHandler.text);
             string messageContent = jsonResponse.choices[0].message.content;
             _output.text =  messageContent;
         }
+
+        else
+            _output.text = "Error: " + llm.error;
     }
 
     [Serializable]
@@ -91,6 +97,7 @@ public class LMStudioConnection : MonoBehaviour
     [Serializable]
     public class Message
     {
+        public string role;
         public string content;
     }
 }

@@ -10,7 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bc3319f0508093d4f81e5a24857103ab, type: 3}
-  m_Name: 23-12-20 07-17  Unity Physics Script and Function Guide
+  m_Name: 23-12-20 08-54  Introduction to Unity Physics Understanding Rigidbodies
+    and the PhysX Engine
   m_EditorClassIdentifier: 
   ChatHistory:
   - role: system

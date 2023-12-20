@@ -11,6 +11,8 @@ using Unity.EditorCoroutines.Editor;
 using UnityEngine.UIElements;
 using Unity.VisualScripting;
 using System.Text.RegularExpressions;
+using System.Linq;
+using System.IO;
 
 public class LLMChatBot : EditorWindow
 {
@@ -26,6 +28,8 @@ public class LLMChatBot : EditorWindow
     private string _assistantMessage;
     private string _userMessage;
     private SavedChatHistorySO savedChatHistory;
+    string _folderPath = $"Assets/UnityLMForge/ChatHistory";
+
 
     private bool _isLLMAvailable = true;
 
@@ -48,9 +52,16 @@ public class LLMChatBot : EditorWindow
 
     bool _saveOnload = true;
 
+    private string[] savedChatHistoryPaths;
+    private int selectedChatHistoryIndex;
+
+
+
     void OnEnable()
     {
         _chatHistoryColor = new(0.1f, 0.1f, 0.1f);
+
+        RefreshChatHistory();
     }
 
     [MenuItem("UnityLLMForge/LLMChatBot")] 
@@ -107,8 +118,18 @@ public class LLMChatBot : EditorWindow
                 {
                     SaveChatHistory();
                 }
-                savedChatHistory = (SavedChatHistorySO)EditorGUILayout.ObjectField("Chat History To Load", savedChatHistory, typeof(SavedChatHistorySO), false);
+                
+                string[] savedChatHistoryNames = savedChatHistoryPaths.Select(path => Path.GetFileNameWithoutExtension(path)).ToArray();
+                selectedChatHistoryIndex = EditorGUILayout.Popup("Chat History", selectedChatHistoryIndex, savedChatHistoryNames);
+
+                savedChatHistory = AssetDatabase.LoadAssetAtPath<SavedChatHistorySO>(savedChatHistoryPaths[selectedChatHistoryIndex]);
+
                 _saveOnload = EditorGUILayout.Toggle("Save current chat On loading a new one ", _saveOnload);
+
+                if (GUILayout.Button("Refresh Chat History"))
+                {
+                    RefreshChatHistory();
+                }
 
                 if (GUILayout.Button("Load Chat History"))
                 {
@@ -155,7 +176,7 @@ public class LLMChatBot : EditorWindow
 
 
                 EditorGUILayout.LabelField("Message The Assistant...", EditorStyles.boldLabel);
-                _scrollPositionUserMessage = EditorGUILayout.BeginScrollView(_scrollPositionUserMessage, GUILayout.Height(200));
+                _scrollPositionUserMessage = EditorGUILayout.BeginScrollView(_scrollPositionUserMessage, GUILayout.Height(100));
                 _userMessage = GUILayout.TextArea(_userMessage, GUILayout.ExpandHeight(true));
                 EditorGUILayout.EndScrollView();
 
@@ -172,12 +193,27 @@ public class LLMChatBot : EditorWindow
         }
     }
 
+    private void RefreshChatHistory()
+    {
+        string[] guids = AssetDatabase.FindAssets("t:SavedChatHistorySO", new[] { _folderPath });
+        savedChatHistoryPaths = new string[guids.Length];
+        for (int i = 0; i < guids.Length; i++)
+        {
+            savedChatHistoryPaths[i] = AssetDatabase.GUIDToAssetPath(guids[i]);
+        }
+    }
+
     private void LoadChatHistory()
     {
+        if (savedChatHistory == null)
+        {
+            Debug.LogError("Invalid chat history selected");
+            return;
+        }
+        
         if (_saveOnload == true)
             SaveChatHistory();
-
-       _chatHistory = new List<Message>(savedChatHistory.ChatHistory);
+        _chatHistory = new List<Message>(savedChatHistory.ChatHistory);
     }
 
     private IEnumerator InitializeNewChat()
@@ -201,9 +237,9 @@ public class LLMChatBot : EditorWindow
         {
             var saveSlot = new SavedChatHistorySO();
             saveSlot.ChatHistory = new(_chatHistory);
-            string dateTime = DateTime.Now.ToString("yy-MM-dd HH-mm-ss");
+            string dateTime = DateTime.Now.ToString("yy-MM-dd HH-mm");
 
-            string assetPath = $"Assets/UnityLMForge/ChatHistory/ChatHistory {dateTime} .asset";
+            string assetPath = _folderPath + $"/{dateTime} Chat History.asset";
             AssetDatabase.CreateAsset(saveSlot, assetPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -228,6 +264,8 @@ public class LLMChatBot : EditorWindow
         _chatHistory.RemoveAt(_chatHistory.Count - 1);
         AssetDatabase.RenameAsset(assetPath, $"{dateTime} {chatHistoryName}.asset");
         _isLLMAvailable = true;
+
+        RefreshChatHistory();
     }
 
     private string CleanAssetName(string chatHistoryName)
@@ -285,7 +323,6 @@ public class LLMChatBot : EditorWindow
         else
             _chatHistory.Add(new Message { role = "assistant", content = "Error: " + llm.error });
     }
-
 
     void OnDestroy()
     {

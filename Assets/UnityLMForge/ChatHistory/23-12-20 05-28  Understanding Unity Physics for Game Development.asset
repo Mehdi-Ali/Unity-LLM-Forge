@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bc3319f0508093d4f81e5a24857103ab, type: 3}
-  m_Name: 23-12-20 05-28-10  Understanding Unity Physics for Game Development
+  m_Name: 23-12-20 05-28  Understanding Unity Physics for Game Development
   m_EditorClassIdentifier: 
   ChatHistory:
   - role: system

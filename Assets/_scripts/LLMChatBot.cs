@@ -122,7 +122,12 @@ public class LLMChatBot : EditorWindow
                 selectedChatHistoryIndex = EditorGUILayout.Popup("Chat History", selectedChatHistoryIndex, savedChatHistoryNames);
 
                 if (selectedChatHistoryIndex <= savedChatHistoryPaths.Length - 1)
-                    _savedChatHistory = AssetDatabase.LoadAssetAtPath<SavedChatHistorySO>(savedChatHistoryPaths[selectedChatHistoryIndex]);
+                {
+                    if (selectedChatHistoryIndex == -1)
+                        _savedChatHistory = null;
+                    else
+                        _savedChatHistory = AssetDatabase.LoadAssetAtPath<SavedChatHistorySO>(savedChatHistoryPaths[selectedChatHistoryIndex]);
+                }
 
                 _saveOnload = EditorGUILayout.Toggle("Save current chat OnLoad ", _saveOnload);
 
@@ -225,10 +230,11 @@ public class LLMChatBot : EditorWindow
 
     private IEnumerator InitializeNewChat()
     {
+        selectedChatHistoryIndex  = -1;
 
         if (_saveOnNewChat == true)
         {
-            SaveChatHistory();
+            SaveChatHistory(false);
         }
 
         _isLLMAvailable = !_saveOnNewChat;

@@ -27,19 +27,45 @@ public class LLMChatBot : EditorWindow
     private Vector2 _scrollPositionSystemMessage;
     private Vector2 _scrollPositionAssistantMessage;
     private Vector2 _scrollPositionUserMessage;
+    private Vector2 _scrollPositionChatHistory;
+
+    GUIStyle _roleStyle;
+    GUIStyle _messageStyle;
+    Texture2D backgroundTexture;
+
+    private TextEditor _textEditor = new TextEditor();
 
 
+    private int _selectedTab = 0;
+    private Color _chatHistoryColor;
 
-    [MenuItem("UnityLLMForge/LLMChatBot")] // Add this line
+    void OnEnable()
+    {
+        _chatHistoryColor = new(0.1f, 0.1f, 0.1f);
+    }
+
+    [MenuItem("UnityLLMForge/LLMChatBot")] 
     public static void ShowWindow()
     {
         GetWindow<LLMChatBot>("LLMChatBot");
     }
 
-    private int _selectedTab = 0; // Add this line
-
     private void OnGUI()
     {
+        _roleStyle = new GUIStyle(GUI.skin.label);
+        _messageStyle = new GUIStyle(GUI.skin.label);
+
+        _messageStyle.normal.textColor = Color.white;
+        _roleStyle.normal.textColor = Color.white;
+
+        _roleStyle.wordWrap = true;
+        _messageStyle.wordWrap = true;
+
+        GUI.backgroundColor = Color.gray;
+
+
+
+    
         string[] tabs = { "Assistant Profile", "Assistant Chat", "Assistant Command" };
         _selectedTab = GUILayout.Toolbar(_selectedTab, tabs);
 
@@ -50,8 +76,8 @@ public class LLMChatBot : EditorWindow
                 url = EditorGUILayout.TextField("URL", url);
 
                 EditorGUILayout.LabelField("Profile Description");
-                _scrollPositionSystemMessage = EditorGUILayout.BeginScrollView(_scrollPositionSystemMessage, GUILayout.Height(100)); // Add this line
-                _systemMessage = GUILayout.TextArea(_systemMessage, GUILayout.ExpandHeight(true)); // Modify this line
+                _scrollPositionSystemMessage = EditorGUILayout.BeginScrollView(_scrollPositionSystemMessage, GUILayout.Height(100)); 
+                _systemMessage = GUILayout.TextArea(_systemMessage, GUILayout.ExpandHeight(true)); 
                 EditorGUILayout.EndScrollView();
 
                 _temperature = EditorGUILayout.Slider("Creativity", _temperature, 0, 1);
@@ -61,12 +87,32 @@ public class LLMChatBot : EditorWindow
                 _stream = EditorGUILayout.Toggle("Stream", _stream);
                 break;
             case 1:
-                EditorGUILayout.LabelField("Chat History Count: " + _chatHistory.Count);
+                EditorGUILayout.LabelField("Chat History");
+                _scrollPositionChatHistory = EditorGUILayout.BeginScrollView(_scrollPositionChatHistory, GUILayout.Height(500));
 
-                EditorGUILayout.LabelField("Assistant Message");
-                _scrollPositionAssistantMessage = EditorGUILayout.BeginScrollView(_scrollPositionAssistantMessage, GUILayout.Height(200));
-                _assistantMessage = GUILayout.TextArea(_assistantMessage, GUILayout.ExpandHeight(true));
+                foreach (Message message in _chatHistory)
+                {
+                    var messageRole = "\n" + message.role + ": ";
+                    _roleStyle.normal.textColor = message.role == "user" ? Color.magenta : Color.cyan;
+                    GUIContent roleContent = new GUIContent(messageRole);
+                    float roleHeight = _roleStyle.CalcHeight(roleContent, EditorGUIUtility.currentViewWidth);
+                    Rect roleRect = GUILayoutUtility.GetRect(roleContent, _roleStyle, GUILayout.Height(roleHeight));
+                    EditorGUI.DrawRect(roleRect, _chatHistoryColor);
+                    EditorGUI.SelectableLabel(roleRect, messageRole, _roleStyle);
+
+                    GUIContent contentContent = new GUIContent(message.content);
+                    float contentHeight = _messageStyle.CalcHeight(contentContent, EditorGUIUtility.currentViewWidth);
+                    Rect contentRect = GUILayoutUtility.GetRect(contentContent, _messageStyle, GUILayout.Height(contentHeight));
+                    Rect backgroundRect = new Rect(contentRect.x, contentRect.y, contentRect.width, contentHeight); // Adjust the height of the background rectangle
+                    EditorGUI.DrawRect(backgroundRect, _chatHistoryColor);
+                    contentRect = new Rect(contentRect.x + 10, contentRect.y, contentRect.width - 20, contentHeight); // Add a 10px margin on each side
+                    EditorGUI.SelectableLabel(contentRect, message.content, _messageStyle);
+                }
+
                 EditorGUILayout.EndScrollView();
+
+
+
 
                 EditorGUILayout.LabelField("User Message");
                 _scrollPositionUserMessage = EditorGUILayout.BeginScrollView(_scrollPositionUserMessage, GUILayout.Height(200));
@@ -88,11 +134,6 @@ public class LLMChatBot : EditorWindow
                 EditorGUILayout.LabelField("Coming Soon...", EditorStyles.boldLabel);
                 break;
         }
-        
-
-
-        // Displaying a List<Message> in the editor can be complex. You might want to create a custom editor or use a plugin.
-        // For now, let's just display the count.
     }
 
 
@@ -134,7 +175,7 @@ public class LLMChatBot : EditorWindow
         llm.uploadHandler = new UploadHandlerRaw(bytesMessage);
         llm.SetRequestHeader("Content-Type", "application/json");
 
-        DisplayResponse("Sending message...");
+        _chatHistory.Add(new Message { role = "assistant", content = "Crafting a response…" });
 
         yield return llm.SendWebRequest();
 
@@ -142,18 +183,12 @@ public class LLMChatBot : EditorWindow
         {
             var jsonResponse = JsonUtility.FromJson<Response>(llm.downloadHandler.text);
             string messageContent = jsonResponse.choices[0].message.content;
+            _chatHistory.RemoveAt(_chatHistory.Count - 1);
             _chatHistory.Add(new Message { role = "assistant", content = messageContent });
-            DisplayResponse(messageContent);
         }
 
         else
-            DisplayResponse("Error: " + llm.error);
-    }
-
-    private void DisplayResponse(string message)
-    {
-        // _output.text = message;
-        _assistantMessage = message;
+            _chatHistory.Add(new Message { role = "assistant", content = "Error: " + llm.error });
     }
 }
 

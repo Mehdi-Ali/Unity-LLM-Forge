@@ -23,7 +23,7 @@ public class LLMChatBot : EditorWindow
     const string defaultUserMessage = "Introduce yourself briefly, start with a greeting or a simple hello or any human like greeting.";
     float _temperature = 0.5f;
     int _maxTokens = -1;
-    bool _stream = true;
+    bool _stream = false;
     private List<Message> _chatHistory = new List<Message>();
     private string _assistantMessage;
     private string _userMessage;
@@ -102,7 +102,7 @@ public class LLMChatBot : EditorWindow
 
                 _maxTokens = EditorGUILayout.IntField("Max Tokens", _maxTokens);
 
-                _stream = EditorGUILayout.Toggle("Stream", _stream);
+                // _stream = EditorGUILayout.Toggle("Stream", _stream);
                 break;
             case 1:
 

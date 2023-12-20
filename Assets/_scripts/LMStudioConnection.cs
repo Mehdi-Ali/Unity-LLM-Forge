@@ -10,18 +10,14 @@ using Newtonsoft.Json;
 
 public class LMStudioConnection : MonoBehaviour
 {
-    [SerializeField] private TextMeshPro _output;
-
-
     [SerializeField] string url = "http://localhost:1234/v1/chat/completions";
     [SerializeField, TextArea(3, 20)] private string _systemMessage;
-    [SerializeField, TextArea(3, 1000)] private string _userMessage;
-    [SerializeField, TextArea(3, 1000)] private string _assistantMessage;
     [SerializeField, Range(0, 1)] float _temperature = 0.7f;
-    [SerializeField] int _max_tokens = -1;
+    [SerializeField] int _maxTokens = -1;
     [SerializeField] bool _stream = false;
-
-    public  List<Message> _chatHistory = new List<Message>();
+    [SerializeField] private List<Message> _chatHistory = new List<Message>();
+    [SerializeField, TextArea(3, 1000)] private string _assistantMessage;
+    [SerializeField, TextArea(3, 1000)] private string _userMessage;
 
 
 
@@ -39,13 +35,14 @@ public class LMStudioConnection : MonoBehaviour
     public void SendMessage()
     {
         _chatHistory.Add(new Message { role = "user", content = _userMessage });
+        _userMessage = "";
         StartCoroutine(LLMChat());
     }
 
     private IEnumerator LLMChat()
     {
         float temperature = _temperature;
-        int max_tokens = _max_tokens;
+        int max_tokens = _maxTokens;
         bool stream = _stream;
 
         var llm = UnityWebRequest.PostWwwForm(url, "POST");
@@ -79,7 +76,7 @@ public class LMStudioConnection : MonoBehaviour
 
     private void DisplayResponse(string message)
     {
-        _output.text = message;
+        // _output.text = message;
         _assistantMessage = message;
     }
 }

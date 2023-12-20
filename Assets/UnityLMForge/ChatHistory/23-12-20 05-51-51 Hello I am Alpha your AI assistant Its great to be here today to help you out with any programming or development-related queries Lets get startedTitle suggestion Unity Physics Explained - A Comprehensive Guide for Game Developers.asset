@@ -10,8 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bc3319f0508093d4f81e5a24857103ab, type: 3}
-  m_Name: 23-12-20 05-32-49  Understanding Unity Physics - The Key to Creating Realistic
-    Game Experiences
+  m_Name: 23-12-20 05-51-51 Hello I am Alpha your AI assistant Its great to be here
+    today to help you out with any programming or development-related queries Lets
+    get startedTitle suggestion Unity Physics Explained - A Comprehensive Guide for
+    Game Developers
   m_EditorClassIdentifier: 
   ChatHistory:
   - role: system

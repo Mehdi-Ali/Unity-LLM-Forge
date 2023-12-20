@@ -27,6 +27,7 @@ public class LLMChatBot : EditorWindow
     private string _userMessage;
     private SavedChatHistorySO savedChatHistory;
 
+    private bool _isLLMAvailable = true;
 
     // Window stuff
     private Vector2 _scrollPositionSystemMessage;
@@ -99,7 +100,7 @@ public class LLMChatBot : EditorWindow
                 EditorGUILayout.LabelField("Chat Options", EditorStyles.boldLabel);
                 if (GUILayout.Button("Initialize New Chat"))
                 {
-                    InitializeNewChat();
+                    EditorCoroutineUtility.StartCoroutine(InitializeNewChat(), this);
                 }
 
                 if (GUILayout.Button("Save Chat History"))
@@ -179,12 +180,12 @@ public class LLMChatBot : EditorWindow
        _chatHistory = new List<Message>(savedChatHistory.ChatHistory);
     }
 
-    private void InitializeNewChat()
+    private IEnumerator InitializeNewChat()
     {
         SaveChatHistory();
-
         _chatHistory.Clear();
         _chatHistory.Add(new Message { role = "system", content = _systemMessage });
+        yield return new WaitUntil(() => _isLLMAvailable == true);
 
         if (String.IsNullOrEmpty(_userMessage))
             _userMessage = defaultUserMessage;
@@ -207,6 +208,7 @@ public class LLMChatBot : EditorWindow
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
+            _isLLMAvailable = false;
             EditorCoroutineUtility.StartCoroutine(RenameChatHistory(dateTime, assetPath), this);
         }
     }
@@ -225,6 +227,7 @@ public class LLMChatBot : EditorWindow
         _chatHistory.RemoveAt(_chatHistory.Count - 1);
         _chatHistory.RemoveAt(_chatHistory.Count - 1);
         AssetDatabase.RenameAsset(assetPath, $"{dateTime} {chatHistoryName}.asset");
+        _isLLMAvailable = true;
     }
 
     private string CleanAssetName(string chatHistoryName)
@@ -247,6 +250,8 @@ public class LLMChatBot : EditorWindow
 
     private IEnumerator LLMChat()
     {
+        _isLLMAvailable = false;
+
         float temperature = _temperature;
         int max_tokens = _maxTokens;
         bool stream = _stream;

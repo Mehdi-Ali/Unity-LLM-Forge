@@ -29,3 +29,10 @@ public class LLMInput
     public int max_tokens;
     public bool stream;
 }
+
+
+[CreateAssetMenu(fileName = "ChatHistory", menuName = "ScriptableObjects/UnityLMForge/ChatHistory", order = 1)]
+public class SavedChatHistorySO : ScriptableObject
+{
+    public List<Message> ChatHistory;
+}

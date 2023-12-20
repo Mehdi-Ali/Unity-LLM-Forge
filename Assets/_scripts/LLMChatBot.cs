@@ -87,11 +87,24 @@ public class LLMChatBot : EditorWindow
                 _stream = EditorGUILayout.Toggle("Stream", _stream);
                 break;
             case 1:
-                EditorGUILayout.LabelField("Chat History");
+
+                EditorGUILayout.LabelField("Chat Options", EditorStyles.boldLabel);
+                if (GUILayout.Button("Initialize New Chat"))
+                {
+                    InitializeNewChat();
+                }
+
+                if (GUILayout.Button("Save Chat History"))
+                {
+                    SaveChatHistory();
+                }
+
+                EditorGUILayout.LabelField("Chat History", EditorStyles.boldLabel);
                 _scrollPositionChatHistory = EditorGUILayout.BeginScrollView(_scrollPositionChatHistory, GUILayout.Height(500));
 
-                foreach (Message message in _chatHistory)
+                for (int i = 1; i < _chatHistory.Count; i++)
                 {
+                    Message message = _chatHistory[i];
                     var messageRole = "\n" + message.role + ": ";
                     _roleStyle.normal.textColor = message.role == "user" ? Color.magenta : Color.cyan;
                     GUIContent roleContent = new GUIContent(messageRole);
@@ -114,16 +127,12 @@ public class LLMChatBot : EditorWindow
 
 
 
-                EditorGUILayout.LabelField("User Message");
+                EditorGUILayout.LabelField("Message The Assistant...", EditorStyles.boldLabel);
                 _scrollPositionUserMessage = EditorGUILayout.BeginScrollView(_scrollPositionUserMessage, GUILayout.Height(200));
                 _userMessage = GUILayout.TextArea(_userMessage, GUILayout.ExpandHeight(true));
                 EditorGUILayout.EndScrollView();
 
                 // Add buttons
-                if (GUILayout.Button("Initialize New Chat"))
-                {
-                    InitializeNewChat();
-                }
 
                 if (GUILayout.Button("Send Message"))
                 {
@@ -136,19 +145,34 @@ public class LLMChatBot : EditorWindow
         }
     }
 
-
-
-    [Button]
     private void InitializeNewChat()
     {
+        SaveChatHistory();
+
         _chatHistory.Clear();
         _chatHistory.Add(new Message { role = "system", content = _systemMessage });
+
+        if (String.IsNullOrEmpty(_userMessage))
+            _userMessage = "Introduce yourself briefly";
+
         _chatHistory.Add(new Message { role = "user", content = _userMessage });
+        _userMessage = "";
         EditorCoroutineUtility.StartCoroutine(LLMChat(), this);
     }
 
+    private void SaveChatHistory()
+    {
+        if (_chatHistory.Count > 0)
+        {
+            var saveSlot = new SavedChatHistorySO();
+            saveSlot.ChatHistory = new(_chatHistory);
+            string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
+            AssetDatabase.CreateAsset(saveSlot, $"Assets/UnityLMForge/ChatHistory/ChatHistory {dateTime} .asset");
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+    }
 
-    [Button]
     public void SendMessage()
     {
         _chatHistory.Add(new Message { role = "user", content = _userMessage });
@@ -175,6 +199,7 @@ public class LLMChatBot : EditorWindow
         llm.uploadHandler = new UploadHandlerRaw(bytesMessage);
         llm.SetRequestHeader("Content-Type", "application/json");
 
+        // make the text show the response letter by letter the same way displayed inLM studio.
         _chatHistory.Add(new Message { role = "assistant", content = "Crafting a response…" });
 
         yield return llm.SendWebRequest();

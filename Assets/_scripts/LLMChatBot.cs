@@ -10,6 +10,7 @@ using UnityEditor;
 using Unity.EditorCoroutines.Editor;
 using UnityEngine.UIElements;
 using Unity.VisualScripting;
+using System.Text.RegularExpressions;
 
 public class LLMChatBot : EditorWindow
 {
@@ -42,6 +43,9 @@ public class LLMChatBot : EditorWindow
 
     private int _selectedTab = 0;
     private Color _chatHistoryColor;
+
+
+    bool _saveOnload = true;
 
     void OnEnable()
     {
@@ -103,12 +107,12 @@ public class LLMChatBot : EditorWindow
                     SaveChatHistory();
                 }
                 savedChatHistory = (SavedChatHistorySO)EditorGUILayout.ObjectField("Chat History To Load", savedChatHistory, typeof(SavedChatHistorySO), false);
+                _saveOnload = EditorGUILayout.Toggle("Save current chat On loading a new one ", _saveOnload);
 
                 if (GUILayout.Button("Load Chat History"))
                 {
                     LoadChatHistory();
                 }
-
 
                 EditorGUILayout.LabelField("Chat History", EditorStyles.boldLabel);
                 _scrollPositionChatHistory = EditorGUILayout.BeginScrollView(_scrollPositionChatHistory, GUILayout.Height(500));
@@ -169,7 +173,9 @@ public class LLMChatBot : EditorWindow
 
     private void LoadChatHistory()
     {
-        SaveChatHistory();
+        if (_saveOnload == true)
+            SaveChatHistory();
+
        _chatHistory = new List<Message>(savedChatHistory.ChatHistory);
     }
 
@@ -194,11 +200,42 @@ public class LLMChatBot : EditorWindow
         {
             var saveSlot = new SavedChatHistorySO();
             saveSlot.ChatHistory = new(_chatHistory);
-            string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
-            AssetDatabase.CreateAsset(saveSlot, $"Assets/UnityLMForge/ChatHistory/ChatHistory {dateTime} .asset");
+            string dateTime = DateTime.Now.ToString("yy-MM-dd HH-mm-ss");
+
+            string assetPath = $"Assets/UnityLMForge/ChatHistory/ChatHistory {dateTime} .asset";
+            AssetDatabase.CreateAsset(saveSlot, assetPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+
+            EditorCoroutineUtility.StartCoroutine(RenameChatHistory(dateTime, assetPath), this);
         }
+    }
+
+    private IEnumerator RenameChatHistory(string dateTime, string assetPath)
+    {
+        var titlePrompt = "Give me a title for this discussion, your answer will be directly used as name so dont't include and special none allowed character, " +
+                            " don't stay Title: and give the title directly" +
+                            "a good example of a response is: Unity Physics " +
+                            "a bad example of a response is: \" Title:  \"Unity Physics\". \"";
+        _chatHistory.Add(new Message { role = "user", content = titlePrompt });
+        yield return EditorCoroutineUtility.StartCoroutine(LLMChat(), this);
+
+        string chatHistoryName = CleanAssetName(_chatHistory[_chatHistory.Count - 1].content);
+
+        _chatHistory.RemoveAt(_chatHistory.Count - 1);
+        _chatHistory.RemoveAt(_chatHistory.Count - 1);
+        AssetDatabase.RenameAsset(assetPath, $"{dateTime} {chatHistoryName}.asset");
+    }
+
+    private string CleanAssetName(string chatHistoryName)
+    {
+        if (chatHistoryName.StartsWith("Title", StringComparison.OrdinalIgnoreCase))
+        {
+            chatHistoryName = chatHistoryName.Substring(5).TrimStart();
+        }
+
+        chatHistoryName = Regex.Replace(chatHistoryName, "[^a-zA-Z0-9 -]", ""); ;
+        return chatHistoryName;
     }
 
     public void SendMessage()

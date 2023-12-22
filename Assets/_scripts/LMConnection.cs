@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -122,6 +123,6 @@ public static class LLMConnection
 
     internal static void StopGenerating()
     {
-        // add a variable that stop generation in the other methods
+
     }
 }

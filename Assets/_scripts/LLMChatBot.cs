@@ -111,6 +111,7 @@ public class LLMChatBot : EditorWindow
                 _temperature = EditorGUILayout.Slider("Creativity", _temperature, 0, 1);
 
                 _maxTokens = EditorGUILayout.IntField("Max Tokens", _maxTokens);
+                _stream = EditorGUILayout.Toggle("Stream", _stream);
                 break;
             case 1:
 
@@ -206,7 +207,6 @@ public class LLMChatBot : EditorWindow
                 {
                     StopGenerating();
                 }
-                _stream = EditorGUILayout.Toggle("Stream", _stream);
 
                 break;
             case 2:
@@ -336,7 +336,7 @@ public class LLMChatBot : EditorWindow
 
         var llmInput = new LLMInput
         {
-            messages = _chatHistory.ToList(),
+            messages = _chatHistory,
             temperature = _temperature,
             max_tokens = _maxTokens,
             stream = _stream

@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bc3319f0508093d4f81e5a24857103ab, type: 3}
-  m_Name: 23-12-22 13-17 Title Unity C Scripting Tutorials
+  m_Name: 23-12-22 17-38 Title Creating Unity Scripts for Physics-Based Games
   m_EditorClassIdentifier: 
   ChatHistory:
   - role: system
@@ -27,16 +27,6 @@ MonoBehaviour:
     content: Introduce yourself briefly, start with a greeting or a simple hello
       or any human like greeting.
   - role: assistant
-    content: Hello there! My name is Alpha, and I'm your AI assistant. I'm designed
-      to help you out with various tasks and answer all of your questions to the
-      best of my abilities. Whether it's a scripting task in Unity using C# or any
-      other request, just let me know what you need, and I'll do my best to deliver.
-      It's great to be working with someone like you today!
-  - role: user
-    content: cool
-  - role: assistant
-    content: '
-
-      I''m glad to hear that! If you have any specific requests or
-      tasks in mind, feel free to let me know, and I''ll get started right away.
-      Have a great day!'
+    content: Hello, I'm Alpha - your AI assistant designed to assist you with various
+      tasks using natural language processing technology. I'm here to help you in
+      any way possible and answer all of your questions as

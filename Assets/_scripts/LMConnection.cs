@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -10,6 +11,14 @@ public static class LLMConnection
 {
 
     public static async Task<string> SendAndReceiveMessages(LLMInput llmInput, string url)
+    {
+        if (llmInput.stream)
+            return await SendAndReceiveStreamedMessages(llmInput, url);
+
+        return await SendAndReceiveNonStreamedMessages(llmInput, url);
+    }
+
+    private static async Task<string> SendAndReceiveNonStreamedMessages(LLMInput llmInput, string url)
     {
         var llm = UnityWebRequest.PostWwwForm(url, "POST");
         string jsonMessage = JsonConvert.SerializeObject(llmInput);
@@ -37,5 +46,51 @@ public static class LLMConnection
 
         else
             return "Error: " + llm.error;
+    }
+
+    public static async Task<string> SendAndReceiveStreamedMessages(LLMInput llmInput, string url)
+    {
+        HttpClient client = new HttpClient();
+        string jsonMessage = JsonConvert.SerializeObject(llmInput);
+
+        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Content = new StringContent(jsonMessage, Encoding.UTF8, "application/json");
+
+        HttpResponseMessage response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+        string responseString = "";
+
+        if (response.IsSuccessStatusCode)
+        {
+            var stream = await response.Content.ReadAsStreamAsync();
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+
+            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            {
+                string chunk = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                chunk = PrepareJason(chunk);
+                var jsonResponse = JsonUtility.FromJson<Response>(chunk);
+                if (jsonResponse.choices[0].delta.IsEmpty())
+                    break;
+
+                string messageContent = jsonResponse.choices[0].delta.content;
+                responseString += messageContent;
+            }
+
+            return responseString;
+        }
+
+        else
+            return "Error: " + response.StatusCode;
+    }
+
+    private static string PrepareJason(string chunk)
+    {
+        while (!chunk.StartsWith("{"))
+        {
+            chunk = chunk[1..];
+        }
+        return chunk;
     }
 }

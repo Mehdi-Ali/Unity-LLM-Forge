@@ -22,7 +22,7 @@ public class LLMChatBot : EditorWindow
     private string _defaultUserMessage = WorkflowPrompts.DefaultUserMessage;
     float _temperature = 0.5f;
     int _maxTokens = -1;
-    bool _stream = false;
+    bool _stream = true;
     private List<Message> _chatHistory = new List<Message>();
     private string _assistantMessage;
     private string _userMessage;
@@ -46,8 +46,15 @@ public class LLMChatBot : EditorWindow
     private Color _chatHistoryColor;
 
 
-    bool _saveOnNewChat = true;
-    bool _saveOnload = true;
+    bool _saveOnNewChat = false;
+    bool _saveOnload = false;
+
+
+    // cache the bool in user settings, or just create a scriptable object that hold the settings
+    bool _callOnAwake = false;
+    bool _saveOnClose = false;
+
+
 
     private string[] savedChatHistoryPaths;
     private int selectedChatHistoryIndex;
@@ -56,10 +63,12 @@ public class LLMChatBot : EditorWindow
 
     void OnEnable()
     {
+        _selectedTab = 1;
         _chatHistoryColor = new(0.1f, 0.1f, 0.1f);
 
         RefreshChatHistory();
-        _ = InitializeNewChat();
+        if (_callOnAwake)
+            _ = InitializeNewChat();
     }
 
     [MenuItem("UnityLLMForge/LLMChatBot")] 
@@ -92,6 +101,7 @@ public class LLMChatBot : EditorWindow
             case 0:
                 EditorGUILayout.LabelField("Profile Settings", EditorStyles.boldLabel);
                 url = EditorGUILayout.TextField("URL", url);
+                _callOnAwake = EditorGUILayout.Toggle("Call On Awake", _callOnAwake);
 
                 EditorGUILayout.LabelField("Profile Description");
                 _scrollPositionSystemMessage = EditorGUILayout.BeginScrollView(_scrollPositionSystemMessage, GUILayout.Height(300)); 
@@ -101,8 +111,6 @@ public class LLMChatBot : EditorWindow
                 _temperature = EditorGUILayout.Slider("Creativity", _temperature, 0, 1);
 
                 _maxTokens = EditorGUILayout.IntField("Max Tokens", _maxTokens);
-
-                // _stream = EditorGUILayout.Toggle("Stream", _stream);
                 break;
             case 1:
 
@@ -199,6 +207,7 @@ public class LLMChatBot : EditorWindow
                 {
                     //StopGenerating();
                 }
+                _stream = EditorGUILayout.Toggle("Stream", _stream);
 
                 break;
             case 2:
@@ -249,7 +258,6 @@ public class LLMChatBot : EditorWindow
         while (!_isLLMAvailable)
         {
             await Task.Delay(100);
-            Debug.Log("LLM is busy...");
         }
 
         _chatHistory.Clear();   
@@ -353,7 +361,8 @@ public class LLMChatBot : EditorWindow
 
     void OnDestroy()
     {
-        SaveChatHistory();
+        if (_saveOnClose)
+            SaveChatHistory();
     }
 }
 

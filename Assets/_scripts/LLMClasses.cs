@@ -12,6 +12,7 @@ public class Response
 [Serializable]
 public class Choice
 {
+    public Delta delta;
     public Message message;
 }
 
@@ -29,3 +30,12 @@ public class LLMInput
     public int max_tokens;
     public bool stream;
 }
+
+[Serializable]
+public class Delta
+{
+    public string role;
+    public string content;
+    public bool IsEmpty() => string.IsNullOrEmpty(role) || string.IsNullOrEmpty(content);
+}
+

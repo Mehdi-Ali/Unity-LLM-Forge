@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -62,12 +63,15 @@ public static class LLMConnection
             {
                 string chunk = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                 chunk = PrepareJason(chunk);
-                var jsonResponse = JsonUtility.FromJson<Response>(chunk);
-                if (jsonResponse.choices[0].delta.IsEmpty())
-                    break;
+                if (IsValidJson(chunk))
+                {
+                    var jsonResponse = JsonUtility.FromJson<Response>(chunk);
+                    if (jsonResponse.choices[0].delta.IsEmpty())
+                        break;
 
-                messageContent += jsonResponse.choices[0].delta.content;
-                callback(messageContent);
+                    messageContent += jsonResponse.choices[0].delta.content;
+                    callback(messageContent);
+                }
             }
         }
         else
@@ -85,6 +89,36 @@ public static class LLMConnection
         
         return chunk;
     }
+
+    private static bool IsValidJson(string strInput)
+    {
+        strInput = strInput.Trim();
+        if ((strInput.StartsWith("{") && strInput.EndsWith("}")) || //For object
+            (strInput.StartsWith("[") && strInput.EndsWith("]"))) //For array
+        {
+            try
+            {
+                var obj = JToken.Parse(strInput);
+                return true;
+            }
+            catch (JsonReaderException jex)
+            {
+                //Exception in parsing json
+                Debug.Log(jex.Message);
+                return false;
+            }
+            catch (Exception ex) //some other exception
+            {
+                Debug.Log(ex.ToString());
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
+
 
     internal static void StopGenerating()
     {

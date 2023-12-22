@@ -346,7 +346,7 @@ public class LLMChatBot : EditorWindow
         {
             await LLMConnection.SendAndReceiveStreamedMessages(llmInput, url, messageContent =>
             {
-                if (_chatHistory[_chatHistory.Count - 1].role == "assistant")
+                if (_chatHistory.Last().role == "assistant")
                     _chatHistory.RemoveAt(_chatHistory.Count - 1);
                 
                 _chatHistory.Add(new Message { role = "assistant", content = messageContent });

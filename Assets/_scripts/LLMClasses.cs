@@ -36,6 +36,6 @@ public class Delta
 {
     public string role;
     public string content;
-    public bool IsEmpty() => string.IsNullOrEmpty(role) || string.IsNullOrEmpty(content);
+    public bool IsEmpty() => string.IsNullOrEmpty(role);
 }
 

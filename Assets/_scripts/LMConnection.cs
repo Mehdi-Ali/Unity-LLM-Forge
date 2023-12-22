@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -10,15 +11,7 @@ using UnityEngine.Networking;
 public static class LLMConnection
 {
 
-    public static async Task<string> SendAndReceiveMessages(LLMInput llmInput, string url)
-    {
-        if (llmInput.stream)
-            return await SendAndReceiveStreamedMessages(llmInput, url);
-
-        return await SendAndReceiveNonStreamedMessages(llmInput, url);
-    }
-
-    private static async Task<string> SendAndReceiveNonStreamedMessages(LLMInput llmInput, string url)
+    public static async Task<string> SendAndReceiveNonStreamedMessages(LLMInput llmInput, string url)
     {
         var llm = UnityWebRequest.PostWwwForm(url, "POST");
         string jsonMessage = JsonConvert.SerializeObject(llmInput);
@@ -48,7 +41,7 @@ public static class LLMConnection
             return "Error: " + llm.error;
     }
 
-    public static async Task<string> SendAndReceiveStreamedMessages(LLMInput llmInput, string url)
+    public static async Task SendAndReceiveStreamedMessages(LLMInput llmInput, string url, Action<string> callback)
     {
         HttpClient client = new HttpClient();
         string jsonMessage = JsonConvert.SerializeObject(llmInput);
@@ -58,13 +51,12 @@ public static class LLMConnection
 
         HttpResponseMessage response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
-        string responseString = "";
-
         if (response.IsSuccessStatusCode)
         {
             var stream = await response.Content.ReadAsStreamAsync();
             byte[] buffer = new byte[8192];
             int bytesRead;
+            string messageContent = "";
 
             while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
             {
@@ -74,15 +66,14 @@ public static class LLMConnection
                 if (jsonResponse.choices[0].delta.IsEmpty())
                     break;
 
-                string messageContent = jsonResponse.choices[0].delta.content;
-                responseString += messageContent;
+                messageContent += jsonResponse.choices[0].delta.content;
+                callback(messageContent);
             }
-
-            return responseString;
         }
-
         else
-            return "Error: " + response.StatusCode;
+        {
+            callback("Error: " + response.StatusCode);
+        }
     }
 
     private static string PrepareJason(string chunk)
@@ -91,6 +82,12 @@ public static class LLMConnection
         {
             chunk = chunk[1..];
         }
+        
         return chunk;
+    }
+
+    internal static void StopGenerating()
+    {
+        // add a variable that stop generation in the other methods
     }
 }

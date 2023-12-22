@@ -185,9 +185,6 @@ public class LLMChatBot : EditorWindow
 
                 EditorGUILayout.EndScrollView();
 
-
-
-
                 EditorGUILayout.LabelField("Message The Assistant...", EditorStyles.boldLabel);
                 _scrollPositionUserMessage = EditorGUILayout.BeginScrollView(_scrollPositionUserMessage, GUILayout.Height(100));
                 _userMessage = GUILayout.TextArea(_userMessage, GUILayout.ExpandHeight(true));
@@ -202,10 +199,12 @@ public class LLMChatBot : EditorWindow
                     SendMessage();
                     _scrollPositionChatHistory.y = Mathf.Infinity;
                     Repaint();
+                    // focus on the _userMessage text area
+                    //...
                 }
                 if (GUILayout.Button("Stop Generating") || onEnter)
                 {
-                    //StopGenerating();
+                    StopGenerating();
                 }
                 _stream = EditorGUILayout.Toggle("Stream", _stream);
 
@@ -331,32 +330,48 @@ public class LLMChatBot : EditorWindow
         _ = LLMChat();
     }
 
-    public void StopGenerating()
-    {
-        // _isLLMAvailable = true;
-        
-    }
-
     public async Task LLMChat()
     {
         _isLLMAvailable = false;
-        _chatHistory.Add(new Message { role = "assistant", content = "Crafting a response…" });
 
         var llmInput = new LLMInput
         {
-            messages = _chatHistory.Take(_chatHistory.Count - 1).ToList(),
+            messages = _chatHistory.ToList(),
             temperature = _temperature,
             max_tokens = _maxTokens,
             stream = _stream
         };
 
-        
-        string messageContent = await LLMConnection.SendAndReceiveMessages(llmInput, url);
+        if (_stream)
+        {
+            await LLMConnection.SendAndReceiveStreamedMessages(llmInput, url, messageContent =>
+            {
+                if (_chatHistory[_chatHistory.Count - 1].role == "assistant")
+                    _chatHistory.RemoveAt(_chatHistory.Count - 1);
+                
+                _chatHistory.Add(new Message { role = "assistant", content = messageContent });
+                Repaint();
+            });
+        }
 
-        _chatHistory.RemoveAt(_chatHistory.Count - 1);
-        _chatHistory.Add(new Message { role = "assistant", content = messageContent });
-        Repaint();
+        else
+        {
+            _chatHistory.Add(new Message { role = "assistant", content = "Crafting a response…" });
+            string messageContent = await LLMConnection.SendAndReceiveNonStreamedMessages(llmInput, url);
+            _chatHistory.RemoveAt(_chatHistory.Count - 1);
+            _chatHistory.Add(new Message { role = "assistant", content = messageContent });
+            Repaint();
+        }
+
+        _scrollPositionChatHistory.y = Mathf.Infinity;
         _isLLMAvailable = true;
+    }
+
+
+    public void StopGenerating()
+    {
+        _isLLMAvailable = true;
+        LLMConnection.StopGenerating();
     }
 
     void OnDestroy()

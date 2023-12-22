@@ -185,10 +185,17 @@ public class LLMChatBot : EditorWindow
                 _userMessage = GUILayout.TextArea(_userMessage, GUILayout.ExpandHeight(true));
                 EditorGUILayout.EndScrollView();
 
-                if (GUILayout.Button("Send Message"))
+                var onEnter  = (Event.current.type == EventType.KeyUp && Event.current.keyCode == KeyCode.Return);
+                if (GUILayout.Button("Send Message") || onEnter)
                 {
+                    if (onEnter)
+                        _userMessage = _userMessage.TrimEnd('\n');
+                    
                     SendMessage();
+                    _scrollPositionChatHistory.y = Mathf.Infinity;
+                    Repaint();
                 }
+
                 break;
             case 2:
                 EditorGUILayout.LabelField("Coming Soon...", EditorStyles.boldLabel);
@@ -345,6 +352,8 @@ public class LLMChatBot : EditorWindow
 
         else
             _chatHistory.Add(new Message { role = "assistant", content = "Error: " + llm.error });
+
+        Repaint();
     }
 
     void OnDestroy()

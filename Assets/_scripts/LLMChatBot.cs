@@ -18,15 +18,20 @@ using System.Threading.Tasks;
 //TODO: this should be renamed to the Tool Name and leave it hundle inly Frontend and extract the LLMChatBot logic to another script
 public class LLMChatBot : EditorWindow
 {
-    public static string URL = "http://localhost:1234/v1/chat/completions";
+    public static string LocalURL = "http://localhost:1234/v1/chat/completions";
+    public static string OpenAiURL = "hhttps://api.openai.com/v1/chat/completions";
+    public static bool LocalLLM = true;
+
     private string _systemMessage = Prompts.SystemMessage;
-    private string _defaultUserMessage = Prompts.DefaultUserMessage;
+    private string _defaultUserChatMessage = Prompts.DefaultUserChatMessage;
+    private string _defaultUserCommandMessage = Prompts.DefaultUserCommandMessage;
     public static float Temperature = 0.5f;
     public static int MaxTokens = -1;
     public static bool Stream = true;
     private List<Message> _chatHistory = new List<Message>();
     private string _assistantMessage;
-    private string _userMessage;
+    private string _userChatMessage;
+    private string _userCommandMessage;
     private SavedChatHistorySO _savedChatHistory;
     string _folderPath = $"Assets/UnityLMForge/ChatHistory";
     public static string GeneratedString = "";
@@ -36,7 +41,8 @@ public class LLMChatBot : EditorWindow
 
     // Window stuff
     private Vector2 _scrollPositionSystemMessage;
-    private Vector2 _scrollPositionUserMessage;
+    private Vector2 _scrollPositionUserChatMessage;
+    private Vector2 _scrollPositionUserCommandMessage;
     private Vector2 _scrollPositionChatHistory;
     private Vector2 _scrollPositionGeneratedScript;
 
@@ -72,6 +78,9 @@ public class LLMChatBot : EditorWindow
         RefreshChatHistory();
         if (_callOnAwake)
             _ = InitializeNewChat();
+
+        _userChatMessage = _defaultUserChatMessage;
+        _userCommandMessage = _defaultUserCommandMessage;
     }
 
     [MenuItem("UnityLLMForge/LLMChatBot")] 
@@ -103,8 +112,10 @@ public class LLMChatBot : EditorWindow
         {
             case 0:
                 EditorGUILayout.LabelField("Profile Settings", EditorStyles.boldLabel);
-                URL = EditorGUILayout.TextField("URL", URL);
-                _callOnAwake = EditorGUILayout.Toggle("Call On Awake", _callOnAwake);
+                LocalURL = EditorGUILayout.TextField("Local URL", LocalURL);
+                OpenAiURL = EditorGUILayout.TextField("Open AI URL", OpenAiURL);
+                LocalLLM = EditorGUILayout.Toggle("Using Local LLM", LocalLLM);
+                //_callOnAwake = EditorGUILayout.Toggle("Call On Awake", _callOnAwake);
 
                 EditorGUILayout.LabelField("Profile Description");
                 _scrollPositionSystemMessage = EditorGUILayout.BeginScrollView(_scrollPositionSystemMessage, GUILayout.Height(300)); 
@@ -160,7 +171,7 @@ public class LLMChatBot : EditorWindow
                 {
                     Message message = _chatHistory[i];
 
-                    if (message.role == "user" && message.content == _defaultUserMessage)
+                    if (message.role == "user" && message.content == _defaultUserChatMessage)
                         continue;
                         
                     
@@ -190,14 +201,14 @@ public class LLMChatBot : EditorWindow
                 EditorGUILayout.EndScrollView();
 
                 EditorGUILayout.LabelField("Message The Assistant...", EditorStyles.boldLabel);
-                _scrollPositionUserMessage = EditorGUILayout.BeginScrollView(_scrollPositionUserMessage, GUILayout.Height(100));
-                _userMessage = GUILayout.TextArea(_userMessage, GUILayout.ExpandHeight(true));
+                _scrollPositionUserChatMessage = EditorGUILayout.BeginScrollView(_scrollPositionUserChatMessage, GUILayout.Height(100));
+                _userChatMessage = GUILayout.TextArea(_userChatMessage, GUILayout.ExpandHeight(true));
                 EditorGUILayout.EndScrollView();
 
                 if (GUILayout.Button("Send Message") || onEnter)
                 {
                     if (onEnter)
-                        _userMessage = _userMessage.TrimEnd('\n');
+                        _userChatMessage = _userChatMessage.TrimEnd('\n');
                     
                     SendMessage();
                     _scrollPositionChatHistory.y = Mathf.Infinity;
@@ -211,14 +222,14 @@ public class LLMChatBot : EditorWindow
                 break;
             case 2:
                 EditorGUILayout.LabelField("Command The Assistant...", EditorStyles.boldLabel);
-                _scrollPositionUserMessage = EditorGUILayout.BeginScrollView(_scrollPositionUserMessage, GUILayout.Height(100));
-                _userMessage = GUILayout.TextArea(_userMessage, GUILayout.ExpandHeight(true));
+                _scrollPositionUserCommandMessage = EditorGUILayout.BeginScrollView(_scrollPositionUserCommandMessage, GUILayout.Height(100));
+                _userCommandMessage = GUILayout.TextArea(_userCommandMessage, GUILayout.ExpandHeight(true));
                 EditorGUILayout.EndScrollView();
 
                 if (GUILayout.Button("Send Command") || onEnter)
                 {
                     if (onEnter)
-                        _userMessage = _userMessage.TrimEnd('\n');
+                        _userCommandMessage = _userCommandMessage.TrimEnd('\n');
 
                     SendCommand();
                     Repaint();
@@ -237,8 +248,8 @@ public class LLMChatBot : EditorWindow
                 if (GUILayout.Button("Ask Assistant to correct Script"))
                     AssistantCommand.CorrectScript();
 
-                if (GUILayout.Button("Validate Edited Script"))
-                    AssistantCommand.ValidateStep(true);
+                if (GUILayout.Button("ClearLogs"))
+                    AssistantCommand.ClearLog();
 
                 if (GUILayout.Button("Delete Generated Script"))
                     AssistantCommand.DeleteGeneratedScript();
@@ -294,11 +305,11 @@ public class LLMChatBot : EditorWindow
         _chatHistory.Clear();   
         _chatHistory.Add(new Message { role = "system", content = _systemMessage });
 
-        if (String.IsNullOrEmpty(_userMessage))
-            _userMessage = _defaultUserMessage;
+        if (String.IsNullOrEmpty(_userChatMessage))
+            _userChatMessage = _defaultUserChatMessage;
 
-        _chatHistory.Add(new Message { role = "user", content = _userMessage });
-        _userMessage = "";
+        _chatHistory.Add(new Message { role = "user", content = _userChatMessage });
+        _userChatMessage = "";
         _ = LLMChat();
 
         await Task.Delay(1);
@@ -360,8 +371,8 @@ public class LLMChatBot : EditorWindow
             return;
         }
 
-        _chatHistory.Add(new Message { role = "user", content = _userMessage });
-        _userMessage = "";
+        _chatHistory.Add(new Message { role = "user", content = _userChatMessage });
+        _userChatMessage = "";
         _ = LLMChat();
     }
 
@@ -410,7 +421,7 @@ public class LLMChatBot : EditorWindow
             return;
         }   
         
-        AssistantCommand.InitializeCommand(_userMessage);    
+        AssistantCommand.InitializeCommand(_userCommandMessage);    
 
         //_userMessage = "";
     }
@@ -421,10 +432,21 @@ public class LLMChatBot : EditorWindow
         LLMConnection.StopGenerating();
     }
 
+
+    private static void LogMessages(List<Message> messages)
+    {
+        foreach (var message in messages)
+        {
+            Debug.Log(message.role + ": " + message.content);
+        }
+    }
+
     void OnDestroy()
     {
         if (_saveOnClose)
             SaveChatHistory();
+
+        AssistantCommand.UnsubscribeFromEvents();
     }
 }
 

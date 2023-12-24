@@ -12,7 +12,7 @@ using UnityEngine.Networking;
 
 public class LLMConnection
 {
-    private static string Url => LLMChatBot.URL;
+    private static string Url => LLMChatBot.LocalLLM ? LLMChatBot.LocalURL : LLMChatBot.OpenAiURL;
 
     public static LLMInput CreateLLMInput(string systemPrompt, string userPrompt)
     {

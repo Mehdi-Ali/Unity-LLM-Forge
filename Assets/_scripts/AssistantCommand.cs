@@ -24,9 +24,21 @@ public class AssistantCommand
 
     private static StringBuilder _errorContent = new StringBuilder();
 
+    private static bool _isCorrectingScript = false;
+
+
+
     static AssistantCommand()
     {
         Application.logMessageReceived += HandleLog;
+        AssemblyReloadEvents.afterAssemblyReload += CheckForIDEErrors;
+
+    }
+
+    public static void UnsubscribeFromEvents()
+    {
+        Application.logMessageReceived -= HandleLog;
+        AssemblyReloadEvents.afterAssemblyReload -= CheckForIDEErrors;
     }
 
     private static void HandleLog(string logString, string stackTrace, LogType type)
@@ -44,14 +56,11 @@ public class AssistantCommand
 
         // to simplify things let's not separate the tasks for now
         await Task.Delay(0);
-        _tasks = new List<string> { prompt };
-        //
-
-        HandleTasks();
+        HandleTask(prompt);
     }
 
-    
-    private static  async Task<List<string>> SimplifyCommand(string commandPrompt)
+
+    private static async Task<List<string>> SimplifyCommand(string commandPrompt)
     {
         commandPrompt = _simplifyCommandToTasksPrompt + commandPrompt;
 
@@ -80,11 +89,44 @@ public class AssistantCommand
     }
 
 
-    private static async void HandleTasks()
+    private static async void HandleTask(string task)
     {
+        llmInput = LLMConnection.CreateLLMInput(Prompts.TaskToScriptPrompt, "The task is described as follows:\n" + task);
+        await CreateScript();
+        _isCorrectingScript = true;
+    }
 
-        llmInput = LLMConnection.CreateLLMInput(Prompts.CommandToScriptPrompt, "The task is described as follows:\n" + _tasks[0]);
+    private static async void CheckForIDEErrors()
+    {
+        Debug.Log("CheckForIDEErrors");
+        Debug.Log(_isCorrectingScript);
+        
+        if (!_isCorrectingScript)
+            return;
+        
+        ClearLog();
+        Debug.Log("ErrorContent: " + _errorContent);
 
+        if (_errorContent.Length > 0)
+            await CorrectScript();
+
+        ValidateStep();
+    }
+    private static async void CheckForRuntimeErrors()
+    {
+        Debug.Log("CheckForRuntimeErrors");
+
+        Debug.Log("ErrorContent: " + _errorContent);
+
+        if (_errorContent.Length > 0)
+            await CorrectScript();
+
+        _isCorrectingScript = true;
+        CheckForIDEErrors();
+    }
+
+    private static async Task CreateScript(bool isUpdatingScript = false)
+    {
         await LLMConnection.SendAndReceiveStreamedMessages(llmInput, (generatedScript) =>
         {
             script = generatedScript;
@@ -93,33 +135,38 @@ public class AssistantCommand
 
         script = CleanupScript(script);
         LLMChatBot.GeneratedString = script;
-        CreateScriptAsset(script);
+        CreateScriptAsset(script, isUpdatingScript);
     }
 
     private static string CleanupScript(string script)
     {
         if (!script.Contains("```csharp"))
             return script;
-        
+
         var match = Regex.Match(script, @"```csharp(.*?)```", RegexOptions.Singleline);
         return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
     }
 
-    private static void CreateScriptAsset(string code)
+    private static void CreateScriptAsset(string code, bool isUpdatingScript)
     {
+        if (isUpdatingScript)
+            AssetDatabase.DeleteAsset(TempFilePath);
+
         var flags = BindingFlags.Static | BindingFlags.NonPublic;
         var method = typeof(ProjectWindowUtil).GetMethod("CreateScriptAssetWithContent", flags);
         method.Invoke(null, new object[] { TempFilePath, code });
     }
 
-    public static void ValidateStep(bool updateScript = false)
+    public static void ValidateStep(bool isUpdatingScript = false)
     {
-        if (updateScript)
-            CreateScriptAsset(LLMChatBot.GeneratedString);
-        
+        _isCorrectingScript = false;
+        if (isUpdatingScript)
+            CreateScriptAsset(LLMChatBot.GeneratedString, isUpdatingScript);
+
         if (!TempFileExists) return;
         EditorApplication.ExecuteMenuItem("Edit/Do Task");
-        //AssetDatabase.DeleteAsset(TempFilePath);
+
+        CheckForRuntimeErrors();
     }
 
     public static void DeleteGeneratedScript()
@@ -127,10 +174,8 @@ public class AssistantCommand
         AssetDatabase.DeleteAsset(TempFilePath);
     }
 
-    public static void CorrectScript()
+    public static async Task CorrectScript()
     {
-        ClearLog();
-
         llmInput.messages.Add(new Message
         {
             role = Role.user.ToString(),
@@ -139,24 +184,15 @@ public class AssistantCommand
                         "\n\nPlease correct the script and send it again."
         });
 
-        //LogMessages(llmInput.messages);
-        Debug.Log(_errorContent);
-    }
-
-    private static void LogMessages(List<Message> messages)
-    {
-        foreach (var message in messages)
-        {
-            Debug.Log(message.role + ": " + message.content);
-        }
+        LLMChatBot.GeneratedString = "Correcting...";
+        await CreateScript(true);
     }
 
     public static void ClearLog()
     {
-        var assembly = Assembly.GetAssembly(typeof(UnityEditor.Editor));
-        var type = assembly.GetType("UnityEditor.LogEntries");
-        var method = type.GetMethod("Clear");
-        method.Invoke(new object(), null);
+        // var assembly = Assembly.GetAssembly(typeof(UnityEditor.Editor));
+        // var type = assembly.GetType("UnityEditor.LogEntries");
+        // var method = type.GetMethod("Clear");
+        // method.Invoke(new object(), null);
     }
-
 }

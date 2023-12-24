@@ -17,17 +17,18 @@ using System.Threading.Tasks;
 
 public class LLMChatBot : EditorWindow
 {
-    string url = "http://localhost:1234/v1/chat/completions";
-    private string _systemMessage = WorkflowPrompts.SystemMessage;
-    private string _defaultUserMessage = WorkflowPrompts.DefaultUserMessage;
-    float _temperature = 0.5f;
-    int _maxTokens = -1;
-    bool _stream = true;
+    public static string URL = "http://localhost:1234/v1/chat/completions";
+    private string _systemMessage = Prompts.SystemMessage;
+    private string _defaultUserMessage = Prompts.DefaultUserMessage;
+    public static float Temperature = 0.5f;
+    public static int MaxTokens = -1;
+    public static bool Stream = true;
     private List<Message> _chatHistory = new List<Message>();
     private string _assistantMessage;
     private string _userMessage;
     private SavedChatHistorySO _savedChatHistory;
     string _folderPath = $"Assets/UnityLMForge/ChatHistory";
+    public static string GeneratedString = "";
 
 
     private bool _isLLMAvailable = true;
@@ -36,6 +37,7 @@ public class LLMChatBot : EditorWindow
     private Vector2 _scrollPositionSystemMessage;
     private Vector2 _scrollPositionUserMessage;
     private Vector2 _scrollPositionChatHistory;
+    private Vector2 _scrollPositionGeneratedScript;
 
     GUIStyle _roleStyle;
     GUIStyle _messageStyle;
@@ -63,7 +65,7 @@ public class LLMChatBot : EditorWindow
 
     void OnEnable()
     {
-        _selectedTab = 1;
+        _selectedTab = 2;
         _chatHistoryColor = new(0.1f, 0.1f, 0.1f);
 
         RefreshChatHistory();
@@ -90,9 +92,9 @@ public class LLMChatBot : EditorWindow
 
         GUI.backgroundColor = Color.gray;
 
+        var onEnter = (Event.current.type == EventType.KeyUp && Event.current.keyCode == KeyCode.Return && !Event.current.shift);
 
 
-    
         string[] tabs = { "Assistant Profile", "Assistant Chat", "Assistant Command" };
         _selectedTab = GUILayout.Toolbar(_selectedTab, tabs);
 
@@ -100,7 +102,7 @@ public class LLMChatBot : EditorWindow
         {
             case 0:
                 EditorGUILayout.LabelField("Profile Settings", EditorStyles.boldLabel);
-                url = EditorGUILayout.TextField("URL", url);
+                URL = EditorGUILayout.TextField("URL", URL);
                 _callOnAwake = EditorGUILayout.Toggle("Call On Awake", _callOnAwake);
 
                 EditorGUILayout.LabelField("Profile Description");
@@ -108,10 +110,10 @@ public class LLMChatBot : EditorWindow
                 _systemMessage = GUILayout.TextArea(_systemMessage, GUILayout.ExpandHeight(true)); 
                 EditorGUILayout.EndScrollView();
 
-                _temperature = EditorGUILayout.Slider("Creativity", _temperature, 0, 1);
+                Temperature = EditorGUILayout.Slider("Creativity", Temperature, 0, 1);
 
-                _maxTokens = EditorGUILayout.IntField("Max Tokens", _maxTokens);
-                _stream = EditorGUILayout.Toggle("Stream", _stream);
+                MaxTokens = EditorGUILayout.IntField("Max Tokens", MaxTokens);
+                Stream = EditorGUILayout.Toggle("Stream", Stream);
                 break;
             case 1:
 
@@ -191,7 +193,6 @@ public class LLMChatBot : EditorWindow
                 _userMessage = GUILayout.TextArea(_userMessage, GUILayout.ExpandHeight(true));
                 EditorGUILayout.EndScrollView();
 
-                var onEnter  = (Event.current.type == EventType.KeyUp && Event.current.keyCode == KeyCode.Return);
                 if (GUILayout.Button("Send Message") || onEnter)
                 {
                     if (onEnter)
@@ -200,8 +201,6 @@ public class LLMChatBot : EditorWindow
                     SendMessage();
                     _scrollPositionChatHistory.y = Mathf.Infinity;
                     Repaint();
-                    // focus on the _userMessage text area
-                    //...
                 }
                 if (GUILayout.Button("Stop Generating") || onEnter)
                 {
@@ -210,7 +209,31 @@ public class LLMChatBot : EditorWindow
 
                 break;
             case 2:
-                EditorGUILayout.LabelField("Coming Soon...", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("Command The Assistant...", EditorStyles.boldLabel);
+                _scrollPositionUserMessage = EditorGUILayout.BeginScrollView(_scrollPositionUserMessage, GUILayout.Height(100));
+                _userMessage = GUILayout.TextArea(_userMessage, GUILayout.ExpandHeight(true));
+                EditorGUILayout.EndScrollView();
+
+                if (GUILayout.Button("Send Command") || onEnter)
+                {
+                    if (onEnter)
+                        _userMessage = _userMessage.TrimEnd('\n');
+
+                    SendCommand();
+                    Repaint();
+                }
+
+                EditorGUILayout.LabelField("Current Task's Script...", EditorStyles.boldLabel);
+                _scrollPositionGeneratedScript = EditorGUILayout.BeginScrollView(_scrollPositionGeneratedScript, GUILayout.Height(600));
+                GeneratedString = GUILayout.TextArea(GeneratedString, GUILayout.ExpandHeight(true));
+                EditorGUILayout.EndScrollView();
+
+                if (GUILayout.Button("Validate Step"))
+                {
+                    AssistantCommand.ValidateStep();
+                    Repaint();
+                }
+
                 break;
         }
     }
@@ -297,7 +320,7 @@ public class LLMChatBot : EditorWindow
     private async Task RenameChatHistory(string dateTime, string assetPath)
     {
 
-        _chatHistory.Add(new Message { role = "user", content = WorkflowPrompts.TitlePrompt});
+        _chatHistory.Add(new Message { role = "user", content = Prompts.TitlePrompt});
         await LLMChat();
 
         string chatHistoryName = CleanAssetName(_chatHistory[_chatHistory.Count - 1].content);
@@ -323,8 +346,11 @@ public class LLMChatBot : EditorWindow
     public void SendMessage()
     {
         if (_isLLMAvailable == false)
+        {
+            Debug.Log("LLM is not available");
             return;
-        
+        }
+
         _chatHistory.Add(new Message { role = "user", content = _userMessage });
         _userMessage = "";
         _ = LLMChat();
@@ -337,14 +363,14 @@ public class LLMChatBot : EditorWindow
         var llmInput = new LLMInput
         {
             messages = _chatHistory,
-            temperature = _temperature,
-            max_tokens = _maxTokens,
-            stream = _stream
+            temperature = Temperature,
+            max_tokens = MaxTokens,
+            stream = Stream
         };
 
-        if (_stream)
+        if (Stream)
         {
-            await LLMConnection.SendAndReceiveStreamedMessages(llmInput, url, messageContent =>
+            await LLMConnection.SendAndReceiveStreamedMessages(llmInput, messageContent =>
             {
                 if (_chatHistory.Last().role == "assistant")
                     _chatHistory.RemoveAt(_chatHistory.Count - 1);
@@ -357,7 +383,7 @@ public class LLMChatBot : EditorWindow
         else
         {
             _chatHistory.Add(new Message { role = "assistant", content = "Crafting a response…" });
-            string messageContent = await LLMConnection.SendAndReceiveNonStreamedMessages(llmInput, url);
+            string messageContent = await LLMConnection.SendAndReceiveNonStreamedMessages(llmInput);
             _chatHistory.RemoveAt(_chatHistory.Count - 1);
             _chatHistory.Add(new Message { role = "assistant", content = messageContent });
             Repaint();
@@ -367,6 +393,18 @@ public class LLMChatBot : EditorWindow
         _isLLMAvailable = true;
     }
 
+    public void SendCommand()
+    {
+        if (_isLLMAvailable == false)
+        {
+            Debug.Log("LLM is not available");
+            return;
+        }   
+        
+        AssistantCommand.InitializeCommand(_userMessage);    
+
+        //_userMessage = "";
+    }
 
     public void StopGenerating()
     {

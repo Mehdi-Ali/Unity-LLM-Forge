@@ -10,12 +10,38 @@ using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public static class LLMConnection
+public class LLMConnection
 {
+    private static string Url => LLMChatBot.URL;
 
-    public static async Task<string> SendAndReceiveNonStreamedMessages(LLMInput llmInput, string url)
+    public static LLMInput CreateLLMInput(string systemPrompt, string userPrompt)
     {
-        var llm = UnityWebRequest.PostWwwForm(url, "POST");
+        return new LLMInput
+        {
+            messages = new List<Message>
+            {
+                new Message
+                {
+                    role = "system",
+                    content = systemPrompt
+                },
+                new Message
+                {
+                    role = "user",
+                    content = userPrompt
+                },
+            },
+
+            temperature = LLMChatBot.Temperature,
+            max_tokens = LLMChatBot.MaxTokens,
+            stream = LLMChatBot.Stream,
+        };
+    }
+
+
+    public static async Task<string> SendAndReceiveNonStreamedMessages(LLMInput llmInput)
+    {
+        var llm = UnityWebRequest.PostWwwForm(Url, "POST");
         string jsonMessage = JsonConvert.SerializeObject(llmInput);
 
         byte[] bytesMessage = Encoding.UTF8.GetBytes(jsonMessage);
@@ -26,7 +52,7 @@ public static class LLMConnection
         llm.SendWebRequest();
         while (!llm.isDone)
         {
-            await Task.Delay(100);
+            await Task.Delay(10);
         }
         tcs.SetResult(true);
 
@@ -43,12 +69,12 @@ public static class LLMConnection
             return "Error: " + llm.error;
     }
 
-    public static async Task SendAndReceiveStreamedMessages(LLMInput llmInput, string url, Action<string> callback)
+    public static async Task SendAndReceiveStreamedMessages(LLMInput llmInput, Action<string> callback)
     {
         HttpClient client = new HttpClient();
         string jsonMessage = JsonConvert.SerializeObject(llmInput);
 
-        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url);
+        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, Url);
         request.Content = new StringContent(jsonMessage, Encoding.UTF8, "application/json");
 
         HttpResponseMessage response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);

@@ -242,8 +242,8 @@ public class LLMChatBot : EditorWindow
 
                 EditorGUILayout.LabelField("Validate Step...", EditorStyles.boldLabel);
 
-                if (GUILayout.Button("Validate Original Script"))
-                    AssistantCommand.ValidateStep();
+                if (GUILayout.Button("Execute Script"))
+                    AssistantCommand.ExecuteScript();
 
                 if (GUILayout.Button("Ask Assistant to correct Script"))
                     AssistantCommand.CorrectScript();

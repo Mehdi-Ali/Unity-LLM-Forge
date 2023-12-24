@@ -558,6 +558,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: LMStudioConnection
       objectReference: {fileID: 0}
+    - target: {fileID: 4840539788691899115, guid: 1c9c73c3f30b42945856c3e846481474,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

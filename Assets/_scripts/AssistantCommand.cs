@@ -110,7 +110,7 @@ public class AssistantCommand
         if (_errorContent.Length > 0)
             await CorrectScript();
 
-        ValidateStep();
+        ExecuteScript();
     }
     private static async void CheckForRuntimeErrors()
     {
@@ -157,7 +157,7 @@ public class AssistantCommand
         method.Invoke(null, new object[] { TempFilePath, code });
     }
 
-    public static void ValidateStep(bool isUpdatingScript = false)
+    public static void ExecuteScript(bool isUpdatingScript = false)
     {
         _isCorrectingScript = false;
         if (isUpdatingScript)
@@ -190,9 +190,9 @@ public class AssistantCommand
 
     public static void ClearLog()
     {
-        // var assembly = Assembly.GetAssembly(typeof(UnityEditor.Editor));
-        // var type = assembly.GetType("UnityEditor.LogEntries");
-        // var method = type.GetMethod("Clear");
-        // method.Invoke(new object(), null);
+        var assembly = Assembly.GetAssembly(typeof(UnityEditor.Editor));
+        var type = assembly.GetType("UnityEditor.LogEntries");
+        var method = type.GetMethod("Clear");
+        method.Invoke(new object(), null);
     }
 }

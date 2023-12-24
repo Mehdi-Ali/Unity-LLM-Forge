@@ -18,14 +18,6 @@ public class Choice
     public Message message;
 }
 
-[System.Serializable]
-public struct OpenAIResponse
-{
-    public string id;
-    public Choice[] choices;
-}
-
-
 [Serializable]
 public class LocalLLMInput
 {

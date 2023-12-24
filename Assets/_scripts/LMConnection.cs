@@ -80,18 +80,9 @@ public class LLMConnection
 
         if (post.result == UnityWebRequest.Result.Success)
         {
-            string messageContent;
-            if (!LLMChatBot.LocalLLM)
-            {
-                var jsonResponse = JsonUtility.FromJson<OpenAIResponse>(post.downloadHandler.text);
-                messageContent = jsonResponse.choices[0].message.content;
-            }
-            else
-            {
-                var jsonResponse = JsonUtility.FromJson<Response>(post.downloadHandler.text);
-                messageContent = jsonResponse.choices[0].message.content;
-            }
-            
+            var jsonResponse = JsonUtility.FromJson<Response>(post.downloadHandler.text);
+            var messageContent = jsonResponse.choices[0].message.content;
+
             return messageContent;
         }
 
@@ -103,30 +94,25 @@ public class LLMConnection
     {
         HttpClient client = new HttpClient();
 
+        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, Url);
+        string jsonMessage = "";
+
         if (!LLMChatBot.LocalLLM)
         {
-            client.Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite);
-            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + OpenAI_API_Key);
-        }
-
-
-        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, Url);
-
-        string jsonMessage = "";
-        if (LLMChatBot.LocalLLM)
-        {
-            jsonMessage = JsonConvert.SerializeObject(llmInput);
-            // this line is not used in OpenAI! so i moved it here 
-            request.Content = new StringContent(jsonMessage, Encoding.UTF8, "application/json");
-        }
-        else
             jsonMessage = JsonConvert.SerializeObject(new OpenAIRequest
             {
                 model = OpenAI_API_model,
                 messages = llmInput.messages.ToArray()
             });
 
+            client.Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite);
+            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + OpenAI_API_Key);
+        }
+        else
+            jsonMessage = JsonConvert.SerializeObject(llmInput);
 
+
+        request.Content = new StringContent(jsonMessage, Encoding.UTF8, "application/json");
         HttpResponseMessage response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
         if (response.IsSuccessStatusCode)
@@ -141,13 +127,16 @@ public class LLMConnection
             {
                 string chunk = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                 chunk = PrepareJason(chunk);
+
                 if (IsValidJson(chunk))
                 {
                     var jsonResponse = JsonUtility.FromJson<Response>(chunk);
-                    if (jsonResponse.choices[0].delta.IsEmpty())
+                    var delta = jsonResponse.choices[0].delta;
+
+                    if (delta.IsEmpty())
                         break;
 
-                    messageContent += jsonResponse.choices[0].delta.content;
+                    messageContent += delta.content;
                     callback(messageContent);
                 }
             }
@@ -164,7 +153,7 @@ public class LLMConnection
         {
             chunk = chunk[1..];
         }
-        
+
         return chunk;
     }
 

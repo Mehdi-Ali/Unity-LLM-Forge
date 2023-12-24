@@ -46,7 +46,7 @@ public class LMStudioConnection : MonoBehaviour
         bool stream = _stream;
 
         var llm = UnityWebRequest.PostWwwForm(url, "POST");
-        string jsonMessage = JsonConvert.SerializeObject(new LLMInput
+        string jsonMessage = JsonConvert.SerializeObject(new LocalLLMInput
         {
             messages = _chatHistory,
             temperature = temperature,

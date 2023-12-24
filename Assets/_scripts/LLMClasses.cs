@@ -3,9 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
 [Serializable]
 public class Response
 {
+    public string id;
     public Choice[] choices;
 }
 
@@ -16,19 +18,35 @@ public class Choice
     public Message message;
 }
 
-[Serializable]
-public class Message
+[System.Serializable]
+public struct OpenAIResponse
 {
-    public string role;
-    [TextArea(3, 1000)] public string content;
+    public string id;
+    public Choice[] choices;
 }
 
-public class LLMInput
+
+[Serializable]
+public class LocalLLMInput
 {
     public List<Message> messages;
     public double temperature;
     public int max_tokens;
     public bool stream;
+}
+
+[Serializable]
+public struct OpenAIRequest
+{
+    public string model;
+    public Message[] messages;
+}
+
+[Serializable]
+public class Message
+{
+    public string role;
+    [TextArea(3, 1000)] public string content;
 }
 
 [Serializable]
@@ -46,3 +64,4 @@ public enum Role
     user,
     assistant
 }
+

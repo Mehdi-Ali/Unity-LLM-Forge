@@ -19,7 +19,9 @@ using System.Threading.Tasks;
 public class LLMChatBot : EditorWindow
 {
     public static string LocalURL = "http://localhost:1234/v1/chat/completions";
-    public static string OpenAiURL = "hhttps://api.openai.com/v1/chat/completions";
+    public static string OpenAiURL = "https://api.openai.com/v1/chat/completions";
+    public static string OpenAI_API_Key = "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";
+    public static string OpenAI_API_model = "gpt-3.5-turbo"; // try "OpenAI Codex" for code generation
     public static bool LocalLLM = true;
 
     private string _systemMessage = Prompts.SystemMessage;
@@ -112,11 +114,18 @@ public class LLMChatBot : EditorWindow
         {
             case 0:
                 EditorGUILayout.LabelField("Profile Settings", EditorStyles.boldLabel);
-                LocalURL = EditorGUILayout.TextField("Local URL", LocalURL);
-                OpenAiURL = EditorGUILayout.TextField("Open AI URL", OpenAiURL);
-                LocalLLM = EditorGUILayout.Toggle("Using Local LLM", LocalLLM);
-                //_callOnAwake = EditorGUILayout.Toggle("Call On Awake", _callOnAwake);
 
+                LocalLLM = EditorGUILayout.Toggle("Using Local LLM", LocalLLM);
+
+                if (LocalLLM)
+                    LocalURL = EditorGUILayout.TextField("Local URL", LocalURL);
+                else
+                {
+                    OpenAiURL = EditorGUILayout.TextField("Open AI URL", OpenAiURL);
+                    OpenAI_API_Key = EditorGUILayout.TextField("Open AI API KEY", OpenAI_API_Key);
+                    OpenAI_API_model = EditorGUILayout.TextField("Open AI Used Model", OpenAI_API_model);
+                }
+                    
                 EditorGUILayout.LabelField("Profile Description");
                 _scrollPositionSystemMessage = EditorGUILayout.BeginScrollView(_scrollPositionSystemMessage, GUILayout.Height(300)); 
                 _systemMessage = GUILayout.TextArea(_systemMessage, GUILayout.ExpandHeight(true)); 
@@ -380,7 +389,7 @@ public class LLMChatBot : EditorWindow
     {
         _isLLMAvailable = false;
 
-        var llmInput = new LLMInput
+        var llmInput = new LocalLLMInput
         {
             messages = _chatHistory,
             temperature = Temperature,

@@ -20,7 +20,7 @@ public class AssistantCommand
 
     static private string _simplifyCommandToTasksPrompt = Prompts.SimplifyCommandToTasksPrompt;
 
-    static private LLMInput llmInput;
+    static private LocalLLMInput llmInput;
 
     private static StringBuilder _errorContent = new StringBuilder();
 

@@ -51,5 +51,8 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "Unity-LLM-Forge.sln"
+    "dotnet.defaultSolution": "Unity-LLM-Forge.sln",
+    "cSpell.words": [
+        "OPENAI"
+    ]
 }

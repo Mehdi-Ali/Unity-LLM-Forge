@@ -43,29 +43,28 @@ public class LLMConnection
 
     public static async Task<string> SendAndReceiveNonStreamedMessages(LocalLLMInput llmInput)
     {
-        UnityWebRequest post;
+        var post = UnityWebRequest.PostWwwForm(Url, "POST");
+        string jsonMessage;
 
         if (!LLMChatBot.LocalLLM)
         {
-            var jsonMessage = JsonConvert.SerializeObject(new OpenAIRequest
+            jsonMessage = JsonConvert.SerializeObject(new OpenAIRequest
             {
                 model = OpenAI_API_model,
                 messages = llmInput.messages.ToArray()
             });
 
-            post = UnityWebRequest.Post(Url, jsonMessage, "application/json");
             post.timeout = Timeout.Infinite;
             post.SetRequestHeader("Authorization", "Bearer " + OpenAI_API_Key);
         }
 
         else
-        {
-            post = UnityWebRequest.PostWwwForm(Url, "POST");
-            string jsonMessage = JsonConvert.SerializeObject(llmInput);
-            byte[] bytesMessage = Encoding.UTF8.GetBytes(jsonMessage);
-            post.uploadHandler = new UploadHandlerRaw(bytesMessage);
-            post.SetRequestHeader("Content-Type", "application/json");
-        }
+            jsonMessage = JsonConvert.SerializeObject(llmInput);
+
+        byte[] bytesMessage = Encoding.UTF8.GetBytes(jsonMessage);
+        post.uploadHandler = new UploadHandlerRaw(bytesMessage);
+        post.SetRequestHeader("Content-Type", "application/json");
+
 
         // TODO I am not so sure about the tcs thing but it seems to work for now I need to check if i can remove it later on?
 

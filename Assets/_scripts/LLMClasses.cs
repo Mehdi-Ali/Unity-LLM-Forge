@@ -39,3 +39,10 @@ public class Delta
     public bool IsEmpty() => string.IsNullOrEmpty(role);
 }
 
+[Serializable]
+public enum Role
+{
+    system,
+    user,
+    assistant
+}

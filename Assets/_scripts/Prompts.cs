@@ -1,6 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
+using System.Security.Cryptography.X509Certificates;
+
 
 public static class Prompts
 {
@@ -15,29 +18,33 @@ public static class Prompts
                             "a good example of a response is: Unity Physics " +
                             "a bad example of a response is: \" Title:  \"Unity Physics\". \"";
 
-    public static string SimplifyCommandToTasksPrompt = SystemMessage +  "\nSimplify the next command to a list of small simple tasks following this format: - Task 1: do something. - Task 2: do something else -... ";
-    public static string CommandToScriptPrompt =
+    public static string SimplifyCommandToTasksPrompt = SystemMessage + "\nSimplify the next command to a list of small simple tasks following this format: - Task 1: do something. - Task 2: do something else -... ";
+
+    public static string ScriptTemplateContent
+    {
+        get
+        {
+            string template = File.ReadAllText("Assets/UnityLMForge/Commands/ScriptTemplate.cs");
+            template = template.Replace("ScriptTemplate", "GeneratedScript_temp");
+            template = template.Replace("//[MenuItem(\"Edit/Do Task\")]", "[MenuItem(\"Edit/Do Task\")]");
+            return template;
+        }
+    }
+
+    public static string CommandToScriptPrompt = SystemMessage + "\n" +
                             "Write a Unity Editor script.\n" +
                             " - It provides its functionality as a menu item placed \"Edit\" > \"Do Task\".\n" +
                             " - It doesn’t provide any editor window. It immediately does the task when the menu item is invoked.\n" +
                             " - Don’t use GameObject.FindGameObjectsWithTag.\n" +
                             " - There is no selected object. Find game objects manually.\n" +
                             " - I only need the script body. Don’t add any explanation.\n" +
+                            " - Do not over engineer stuff and make the script as simple as possible \n" +
+                            " - To Create and / or Instantiate you need to call the function through UnityEngine.Object.Instantiate(). \n" +
+                            " - Your message will be past in a script and executed directly so don not mention explanations or any thing else other than the logic.\n" +
                             " - Use this template:\n" +
                             "```csharp\n" +
-                            "using UnityEditor;\n" +
-                            "using UnityEngine;\n" +
-                            "\n" +
-                            "public class MyEditorScript\n" +
-                            "{\n" +
-                            "    [MenuItem(\"Edit/Do Task\")]\n" +
-                            "    public static void DoTask()\n" +
-                            "    {\n" +
-                            "        // Code to execute\n" +
-                            "    }\n" +
-                            "}\n" +
-                            "```\n" +
-                            "The task is described as follows:\n";
+                            ScriptTemplateContent +
+                            "\n```\n";
 
 
 

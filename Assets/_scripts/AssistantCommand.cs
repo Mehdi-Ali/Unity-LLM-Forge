@@ -6,20 +6,40 @@ using UnityEditor;
 using System;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using System.Linq;
+using System.Text;
 
 
-public static class AssistantCommand
+public class AssistantCommand
 {
     static private List<string> _tasks = new List<string>();
-    private const string TempFilePath = "Assets/UnityLMForge/GeneratedScriptTemp.cs";
+    private const string TempFilePath = "Assets/UnityLMForge/Commands/GeneratedScript_temp.cs";
 
     static bool TempFileExists => System.IO.File.Exists(TempFilePath);
+    static string script = "";
 
     static private string _simplifyCommandToTasksPrompt = Prompts.SimplifyCommandToTasksPrompt;
 
+    static private LLMInput llmInput;
+
+    private static StringBuilder _errorContent = new StringBuilder();
+
+    static AssistantCommand()
+    {
+        Application.logMessageReceived += HandleLog;
+    }
+
+    private static void HandleLog(string logString, string stackTrace, LogType type)
+    {
+        if (type == LogType.Error || type == LogType.Exception)
+        {
+            _errorContent.AppendLine(logString);
+        }
+    }
 
     public static async void InitializeCommand(string prompt)
     {
+        LLMChatBot.GeneratedString = "coding...";
         //_tasks = await SimplifyCommand(prompt);
 
         // to simplify things let's not separate the tasks for now
@@ -35,8 +55,7 @@ public static class AssistantCommand
     {
         commandPrompt = _simplifyCommandToTasksPrompt + commandPrompt;
 
-        LLMInput llmInput = LLMConnection.CreateLLMInput(Prompts.SimplifyCommandToTasksPrompt, commandPrompt);
-
+        llmInput = LLMConnection.CreateLLMInput(Prompts.SimplifyCommandToTasksPrompt, commandPrompt);
         string tasks = "";
         await LLMConnection.SendAndReceiveStreamedMessages(llmInput, (response) =>
         {
@@ -64,9 +83,8 @@ public static class AssistantCommand
     private static async void HandleTasks()
     {
 
-        LLMInput llmInput = LLMConnection.CreateLLMInput(Prompts.CommandToScriptPrompt, "AI command script:" + _tasks[0]);
+        llmInput = LLMConnection.CreateLLMInput(Prompts.CommandToScriptPrompt, "The task is described as follows:\n" + _tasks[0]);
 
-        string script = "";
         await LLMConnection.SendAndReceiveStreamedMessages(llmInput, (generatedScript) =>
         {
             script = generatedScript;
@@ -74,6 +92,7 @@ public static class AssistantCommand
         });
 
         script = CleanupScript(script);
+        LLMChatBot.GeneratedString = script;
         CreateScriptAsset(script);
     }
 
@@ -88,16 +107,56 @@ public static class AssistantCommand
 
     private static void CreateScriptAsset(string code)
     {
-        // UnityEditor internal method: ProjectWindowUtil.CreateScriptAssetWithContent
         var flags = BindingFlags.Static | BindingFlags.NonPublic;
         var method = typeof(ProjectWindowUtil).GetMethod("CreateScriptAssetWithContent", flags);
         method.Invoke(null, new object[] { TempFilePath, code });
     }
 
-    public static void ValidateStep()
+    public static void ValidateStep(bool updateScript = false)
     {
+        if (updateScript)
+            CreateScriptAsset(LLMChatBot.GeneratedString);
+        
         if (!TempFileExists) return;
         EditorApplication.ExecuteMenuItem("Edit/Do Task");
         //AssetDatabase.DeleteAsset(TempFilePath);
     }
+
+    public static void DeleteGeneratedScript()
+    {
+        AssetDatabase.DeleteAsset(TempFilePath);
+    }
+
+    public static void CorrectScript()
+    {
+        ClearLog();
+
+        llmInput.messages.Add(new Message
+        {
+            role = Role.user.ToString(),
+            content = "Here's Unity's Console Error Logs :\n" +
+                        _errorContent.ToString() +
+                        "\n\nPlease correct the script and send it again."
+        });
+
+        //LogMessages(llmInput.messages);
+        Debug.Log(_errorContent);
+    }
+
+    private static void LogMessages(List<Message> messages)
+    {
+        foreach (var message in messages)
+        {
+            Debug.Log(message.role + ": " + message.content);
+        }
+    }
+
+    public static void ClearLog()
+    {
+        var assembly = Assembly.GetAssembly(typeof(UnityEditor.Editor));
+        var type = assembly.GetType("UnityEditor.LogEntries");
+        var method = type.GetMethod("Clear");
+        method.Invoke(new object(), null);
+    }
+
 }

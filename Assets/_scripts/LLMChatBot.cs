@@ -15,6 +15,7 @@ using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
 
+//TODO: this should be renamed to the Tool Name and leave it hundle inly Frontend and extract the LLMChatBot logic to another script
 public class LLMChatBot : EditorWindow
 {
     public static string URL = "http://localhost:1234/v1/chat/completions";
@@ -228,11 +229,19 @@ public class LLMChatBot : EditorWindow
                 GeneratedString = GUILayout.TextArea(GeneratedString, GUILayout.ExpandHeight(true));
                 EditorGUILayout.EndScrollView();
 
-                if (GUILayout.Button("Validate Step"))
-                {
+                EditorGUILayout.LabelField("Validate Step...", EditorStyles.boldLabel);
+
+                if (GUILayout.Button("Validate Original Script"))
                     AssistantCommand.ValidateStep();
-                    Repaint();
-                }
+
+                if (GUILayout.Button("Ask Assistant to correct Script"))
+                    AssistantCommand.CorrectScript();
+
+                if (GUILayout.Button("Validate Edited Script"))
+                    AssistantCommand.ValidateStep(true);
+
+                if (GUILayout.Button("Delete Generated Script"))
+                    AssistantCommand.DeleteGeneratedScript();
 
                 break;
         }

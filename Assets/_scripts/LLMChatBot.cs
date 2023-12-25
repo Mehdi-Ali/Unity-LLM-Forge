@@ -74,7 +74,6 @@ public class LLMChatBot : EditorWindow
 
     void OnEnable()
     {
-        _selectedTab = 2;
         _chatHistoryColor = new(0.1f, 0.1f, 0.1f);
 
         RefreshChatHistory();

@@ -3,10 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -51,7 +53,7 @@ public class LLMConnection
             jsonMessage = JsonConvert.SerializeObject(new OpenAIRequest
             {
                 model = OpenAI_API_model,
-                messages = llmInput.messages.ToArray()
+                messages = llmInput.messages
             });
 
             post.timeout = Timeout.Infinite;
@@ -102,7 +104,8 @@ public class LLMConnection
             jsonMessage = JsonConvert.SerializeObject(new OpenAIRequest
             {
                 model = OpenAI_API_model,
-                messages = llmInput.messages.ToArray()
+                messages = llmInput.messages,
+                stream = true
             });
 
             client.Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite);
@@ -123,21 +126,60 @@ public class LLMConnection
             int bytesRead;
             string messageContent = "";
 
-            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            var isStillStreaming = true;
+            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0 && isStillStreaming)
             {
                 string chunk = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                chunk = PrepareJason(chunk);
 
-                if (IsValidJson(chunk))
+                if (!LLMChatBot.LocalLLM)
                 {
-                    var jsonResponse = JsonUtility.FromJson<Response>(chunk);
-                    var delta = jsonResponse.choices[0].delta;
+                    List<string> dataList = SplitJsonObjects(chunk);
+                    foreach (var data in dataList)
+                    {
+                        try
+                        {
+                            OpenAIResponse jsonResponse = JsonUtility.FromJson<OpenAIResponse>(data);
+                            if (jsonResponse == null)
+                                continue;
 
-                    if (delta.IsEmpty())
-                        break;
+                            OpenAIDelta delta = jsonResponse.choices[0].delta;
+                            if (delta == null)
+                                continue;
+                            
+                            if (delta.IsEmpty())
+                                isStillStreaming = false;
 
-                    messageContent += delta.content;
-                    callback(messageContent);
+                            messageContent += delta.content;
+                            callback(messageContent);
+                        }
+                        
+                        catch (Exception)
+                        {
+                            continue;
+                        }
+
+                    }
+                }
+
+                else 
+                {
+                    chunk = PrepareJason(chunk);
+                    try
+                    {
+                        var jsonResponse = JsonUtility.FromJson<Response>(chunk);
+                        var delta = jsonResponse.choices[0].delta;
+
+                        if (delta.IsEmpty())
+                            break;
+
+                        messageContent += delta.content;
+                        callback(messageContent);
+                    }
+                    catch (Exception)
+                    {
+                        continue;
+                    }
+                    
                 }
             }
         }
@@ -147,6 +189,21 @@ public class LLMConnection
         }
     }
 
+    public static List<string> SplitJsonObjects(string data)
+    {
+        string pattern = @"{(?:[^{}]|(?<open>{)|(?<-open>}))*(?(open)(?!))}";
+
+        MatchCollection matches = Regex.Matches(data, pattern);
+
+        List<string> dataList = new List<string>();
+        foreach (Match match in matches)
+        {
+            dataList.Add(match.Value);
+        }
+
+        return dataList;
+    }
+    
     private static string PrepareJason(string chunk)
     {
         while (!chunk.StartsWith("{"))
@@ -156,36 +213,6 @@ public class LLMConnection
 
         return chunk;
     }
-
-    private static bool IsValidJson(string strInput)
-    {
-        strInput = strInput.Trim();
-        if ((strInput.StartsWith("{") && strInput.EndsWith("}")) || //For object
-            (strInput.StartsWith("[") && strInput.EndsWith("]"))) //For array
-        {
-            try
-            {
-                var obj = JToken.Parse(strInput);
-                return true;
-            }
-            catch (JsonReaderException jex)
-            {
-                //Exception in parsing json
-                Debug.Log(jex.Message);
-                return false;
-            }
-            catch (Exception ex) //some other exception
-            {
-                Debug.Log(ex.ToString());
-                return false;
-            }
-        }
-        else
-        {
-            return false;
-        }
-    }
-
 
     internal static void StopGenerating()
     {

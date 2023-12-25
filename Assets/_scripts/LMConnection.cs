@@ -124,7 +124,7 @@ public class LLMConnection
 
             byte[] buffer = new byte[8192];
             int bytesRead;
-            string messageContent = "";
+            StringBuilder messageContent = new StringBuilder();
 
             var isStillStreaming = true;
             while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0 && isStillStreaming)
@@ -149,12 +149,13 @@ public class LLMConnection
                             if (delta.IsEmpty())
                                 isStillStreaming = false;
 
-                            messageContent += delta.content;
-                            callback(messageContent);
+                            messageContent.Append(delta.content);
+                            callback(messageContent.ToString());
                         }
                         
-                        catch (Exception)
+                        catch (Exception ex)
                         {
+                            Debug.Log($"Error parsing JSON: {ex.Message}");
                             continue;
                         }
 
@@ -172,14 +173,14 @@ public class LLMConnection
                         if (delta.IsEmpty())
                             break;
 
-                        messageContent += delta.content;
-                        callback(messageContent);
+                        messageContent.Append(delta.content);
+                        callback(messageContent.ToString());
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        Debug.Log($"Error parsing JSON: {ex.Message}");
                         continue;
                     }
-                    
                 }
             }
         }

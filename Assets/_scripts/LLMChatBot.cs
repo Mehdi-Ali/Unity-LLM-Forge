@@ -14,6 +14,7 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
+using UnityEngine.SocialPlatforms;
 
 //TODO: this should be renamed to the Tool Name and leave it hundle inly Frontend and extract the LLMChatBot logic to another script
 public class LLMChatBot : EditorWindow
@@ -114,26 +115,26 @@ public class LLMChatBot : EditorWindow
             case 0:
                 EditorGUILayout.LabelField("Profile Settings", EditorStyles.boldLabel);
 
+                Stream = EditorGUILayout.Toggle("Stream", Stream);
                 LocalLLM = EditorGUILayout.Toggle("Using Local LLM", LocalLLM);
 
                 if (LocalLLM)
+                {
                     LocalURL = EditorGUILayout.TextField("Local URL", LocalURL);
+                    Temperature = EditorGUILayout.Slider("Creativity", Temperature, 0, 1);
+                    MaxTokens = EditorGUILayout.IntField("Max Tokens", MaxTokens);
+                }
                 else
                 {
                     OpenAiURL = EditorGUILayout.TextField("Open AI URL", OpenAiURL);
                     OpenAI_API_Key = EditorGUILayout.TextField("Open AI API KEY", OpenAI_API_Key);
                     OpenAI_API_model = EditorGUILayout.TextField("Open AI Used Model", OpenAI_API_model);
                 }
-                    
+
                 EditorGUILayout.LabelField("Profile Description");
                 _scrollPositionSystemMessage = EditorGUILayout.BeginScrollView(_scrollPositionSystemMessage, GUILayout.Height(300)); 
                 _systemMessage = GUILayout.TextArea(_systemMessage, GUILayout.ExpandHeight(true)); 
                 EditorGUILayout.EndScrollView();
-
-                Temperature = EditorGUILayout.Slider("Creativity", Temperature, 0, 1);
-
-                MaxTokens = EditorGUILayout.IntField("Max Tokens", MaxTokens);
-                Stream = EditorGUILayout.Toggle("Stream", Stream);
                 break;
             case 1:
 

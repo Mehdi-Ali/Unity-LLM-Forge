@@ -20,7 +20,7 @@ public class AssistantCommand
 
     static private string _simplifyCommandToTasksPrompt = Prompts.SimplifyCommandToTasksPrompt;
 
-    static private LocalLLMInput llmInput;
+    public static LocalLLMInput LLMInput;
 
     private static StringBuilder _errorContent = new StringBuilder();
 
@@ -64,9 +64,9 @@ public class AssistantCommand
     {
         commandPrompt = _simplifyCommandToTasksPrompt + commandPrompt;
 
-        llmInput = LLMConnection.CreateLLMInput(Prompts.SimplifyCommandToTasksPrompt, commandPrompt);
+        LLMInput = LLMConnection.CreateLLMInput(Prompts.SimplifyCommandToTasksPrompt, commandPrompt);
         string tasks = "";
-        await LLMConnection.SendAndReceiveStreamedMessages(llmInput, (response) =>
+        await LLMConnection.SendAndReceiveStreamedMessages(LLMInput, (response) =>
         {
             tasks = response;
             Debug.Log(response);
@@ -91,26 +91,21 @@ public class AssistantCommand
 
     private static async void HandleTask(string task)
     {
-        llmInput = LLMConnection.CreateLLMInput(Prompts.TaskToScriptPrompt, "The task is described as follows:\n" + task);
+        LLMInput = LLMConnection.CreateLLMInput(Prompts.TaskToScriptPrompt, "The task is described as follows:\n" + task);
         await CreateScript();
         _isCorrectingScript = true;
     }
 
+    //[InitializeOnLoadMethod]
     private static async void CheckForIDEErrors()
     {
-        Debug.Log("CheckForIDEErrors");
-        Debug.Log(_isCorrectingScript);
-        
         if (!_isCorrectingScript)
             return;
-        
-        ClearLog();
-        Debug.Log("ErrorContent: " + _errorContent);
 
         if (_errorContent.Length > 0)
             await CorrectScript();
-
-        ExecuteScript();
+        else
+            ExecuteScript();
     }
     private static async void CheckForRuntimeErrors()
     {
@@ -127,18 +122,18 @@ public class AssistantCommand
 
     private static async Task CreateScript(bool isUpdatingScript = false)
     {
-        await LLMConnection.SendAndReceiveStreamedMessages(llmInput, (generatedScript) =>
+        await LLMConnection.SendAndReceiveStreamedMessages(LLMInput, (generatedScript) =>
         {
-            script = generatedScript;
-            LLMChatBot.GeneratedString = script;
+            LLMChatBot.GeneratedString = generatedScript;
         });
 
-        script = CleanupScript(script);
-        LLMChatBot.GeneratedString = script;
+        LLMChatBot.GeneratedString = GetOnlyScript(LLMChatBot.GeneratedString);
+        script = LLMChatBot.GeneratedString;
+
         CreateScriptAsset(script, isUpdatingScript);
     }
 
-    private static string CleanupScript(string script)
+    private static string GetOnlyScript(string script)
     {
         if (!script.Contains("```csharp"))
             return script;
@@ -163,10 +158,11 @@ public class AssistantCommand
         if (isUpdatingScript)
             CreateScriptAsset(LLMChatBot.GeneratedString, isUpdatingScript);
 
-        if (!TempFileExists) return;
+        if (!TempFileExists)
+            return;
         EditorApplication.ExecuteMenuItem("Edit/Do Task");
 
-        CheckForRuntimeErrors();
+        //CheckForRuntimeErrors();
     }
 
     public static void DeleteGeneratedScript()
@@ -176,14 +172,22 @@ public class AssistantCommand
 
     public static async Task CorrectScript()
     {
-        llmInput.messages.Add(new Message
+
+        LLMInput.messages.Add(new Message
+        {
+            role = Role.assistant.ToString(),
+            content = "```csharp\n" + LLMChatBot.GeneratedString + "\n```"
+        });
+
+        LLMInput.messages.Add(new Message
         {
             role = Role.user.ToString(),
             content = "Here's Unity's Console Error Logs :\n" +
                         _errorContent.ToString() +
-                        "\n\nPlease correct the script and send it again."
+                        Prompts.CorrectScriptPrompt 
         });
 
+        _errorContent.Clear();
         LLMChatBot.GeneratedString = "Correcting...";
         await CreateScript(true);
     }

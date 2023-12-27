@@ -153,9 +153,8 @@ public class LLMConnection
                             callback(messageContent.ToString());
                         }
                         
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                            Debug.Log($"Error parsing JSON: {ex.Message}");
                             continue;
                         }
 
@@ -176,9 +175,8 @@ public class LLMConnection
                         messageContent.Append(delta.content);
                         callback(messageContent.ToString());
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        Debug.Log($"Error parsing JSON: {ex.Message}");
                         continue;
                     }
                 }

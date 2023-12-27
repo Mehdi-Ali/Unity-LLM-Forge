@@ -147,7 +147,7 @@ public class LLMChatBot : EditorWindow
 
                 if (GUILayout.Button("Save Chat History"))
                 {
-                    SaveChatHistory();
+                    SaveChatHistory(_chatHistory);
                 }
                 
                 string[] savedChatHistoryNames = savedChatHistoryPaths.Select(path => Path.GetFileNameWithoutExtension(path)).ToArray();
@@ -263,6 +263,11 @@ public class LLMChatBot : EditorWindow
                 if (GUILayout.Button("Delete Generated Script"))
                     AssistantCommand.DeleteGeneratedScript();
 
+                if (GUILayout.Button("Save Command History"))
+                    SaveChatHistory(AssistantCommand.LLMInput.messages, false);
+                if (GUILayout.Button("Log command History"))
+                    LogMessages(AssistantCommand.LLMInput.messages);
+
                 break;
         }
     }
@@ -293,7 +298,7 @@ public class LLMChatBot : EditorWindow
             if (selectedChatHistoryIndex <= savedChatHistoryPaths.Length - 1)
                 index = selectedChatHistoryIndex;
             
-            SaveChatHistory(false);
+            SaveChatHistory(_chatHistory, false);
         }
         
         _chatHistory = new List<Message>(_savedChatHistory.ChatHistory);
@@ -304,7 +309,7 @@ public class LLMChatBot : EditorWindow
         selectedChatHistoryIndex  = -1;
 
         if (_saveOnNewChat == true)
-            SaveChatHistory(false);
+            SaveChatHistory(_chatHistory, false);
 
         while (!_isLLMAvailable)
         {
@@ -324,13 +329,14 @@ public class LLMChatBot : EditorWindow
         await Task.Delay(1);
     }
 
-    private void SaveChatHistory(bool setIndex = true)
+    private void SaveChatHistory(List<Message> messages, bool setIndex = true)
     {
-        if (_chatHistory.Count <= 0)
+        LogMessages(messages);
+        if (messages.Count <= 0)
             return;
 
         var saveSlot = ScriptableObject.CreateInstance<SavedChatHistorySO>();
-        saveSlot.ChatHistory = new(_chatHistory);
+        saveSlot.ChatHistory = new(messages);
         string dateTime = DateTime.Now.ToString("yy-MM-dd HH-mm");
 
         string assetPath = _folderPath + $"/{dateTime} Chat History.asset";
@@ -431,8 +437,6 @@ public class LLMChatBot : EditorWindow
         }   
         
         AssistantCommand.InitializeCommand(_userCommandMessage);    
-
-        //_userMessage = "";
     }
 
     public void StopGenerating()
@@ -453,7 +457,7 @@ public class LLMChatBot : EditorWindow
     void OnDestroy()
     {
         if (_saveOnClose)
-            SaveChatHistory();
+            SaveChatHistory(_chatHistory);
 
         AssistantCommand.UnsubscribeFromEvents();
     }

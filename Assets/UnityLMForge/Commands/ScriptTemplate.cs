@@ -1,11 +1,12 @@
-using UnityEditor;
 using UnityEngine;
+using UnityEditor;
 
-public class ScriptTemplate : MonoBehaviour
+public class ScriptTemplate : EditorWindow
 {
     //[MenuItem("Edit/Do Task")]
-    public static void DoTask()
+    private static void DoTask()
     {
-        
+        // an example of creating a primitive cube:
+        GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
     }
 }

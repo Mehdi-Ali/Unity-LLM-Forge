@@ -14,9 +14,9 @@ using UnityEngine.Networking;
 
 public class LLMConnection
 {
-    private static string Url => LLMChatBot.LocalLLM ? LLMChatBot.LocalURL : LLMChatBot.OpenAiURL;
-    private static string OpenAI_API_Key => LLMChatBot.OpenAI_API_Key;
-    private static string OpenAI_API_model => LLMChatBot.OpenAI_API_model;
+    private static string Url => LLMAssistant.LocalLLM ? LLMAssistant.LocalURL : LLMAssistant.OpenAiURL;
+    private static string OpenAI_API_Key => LLMAssistant.OpenAI_API_Key;
+    private static string OpenAI_API_model => LLMAssistant.OpenAI_API_model;
 
     public static LocalLLMInput CreateLLMInput(string systemPrompt, string userPrompt)
     {
@@ -36,9 +36,9 @@ public class LLMConnection
                 },
             },
 
-            temperature = LLMChatBot.Temperature,
-            max_tokens = LLMChatBot.MaxTokens,
-            stream = LLMChatBot.Stream,
+            temperature = LLMAssistant.Temperature,
+            max_tokens = LLMAssistant.MaxTokens,
+            stream = LLMAssistant.Stream,
         };
     }
 
@@ -48,7 +48,7 @@ public class LLMConnection
         var post = UnityWebRequest.PostWwwForm(Url, "POST");
         string jsonMessage;
 
-        if (!LLMChatBot.LocalLLM)
+        if (!LLMAssistant.LocalLLM)
         {
             jsonMessage = JsonConvert.SerializeObject(new OpenAIRequest
             {
@@ -99,7 +99,7 @@ public class LLMConnection
         HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, Url);
         string jsonMessage = "";
 
-        if (!LLMChatBot.LocalLLM)
+        if (!LLMAssistant.LocalLLM)
         {
             jsonMessage = JsonConvert.SerializeObject(new OpenAIRequest
             {
@@ -131,7 +131,7 @@ public class LLMConnection
             {
                 string chunk = Encoding.UTF8.GetString(buffer, 0, bytesRead);
 
-                if (!LLMChatBot.LocalLLM)
+                if (!LLMAssistant.LocalLLM)
                 {
                     List<string> dataList = SplitJsonObjects(chunk);
                     foreach (var data in dataList)

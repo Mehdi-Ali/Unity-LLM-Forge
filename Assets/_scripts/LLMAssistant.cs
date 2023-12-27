@@ -16,33 +16,48 @@ using System.IO;
 using System.Threading.Tasks;
 using UnityEngine.SocialPlatforms;
 
-//TODO: this should be renamed to the Tool Name and leave it hundle inly Frontend and extract the LLMChatBot logic to another script
-public class LLMChatBot : EditorWindow
+public class LLMAssistant : EditorWindow
 {
-    public static string LocalURL = "http://localhost:1234/v1/chat/completions";
-    public static string OpenAiURL = "https://api.openai.com/v1/chat/completions";
-    public static string OpenAI_API_Key = "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";
-    public static string OpenAI_API_model = "gpt-3.5-turbo"; // try "OpenAI Codex" for code generation
-    public static bool LocalLLM = true;
+    public static ToolLifecycleManagerSO LifecycleManager;
 
+    public static string LocalURL { get => LifecycleManager.LocalURL; set => LifecycleManager.LocalURL = value; }
+    public static string OpenAiURL { get => LifecycleManager.OpenAiURL; set => LifecycleManager.OpenAiURL = value; }
+    public static string OpenAI_API_Key { get => LifecycleManager.OpenAI_API_Key; set => LifecycleManager.OpenAI_API_Key = value; }
+    public static string OpenAI_API_model { get => LifecycleManager.OpenAI_API_model; set => LifecycleManager.OpenAI_API_model = value; }
+    public static bool LocalLLM { get => LifecycleManager.LocalLLM; set => LifecycleManager.LocalLLM = value; }
+
+
+    public static float Temperature { get => LifecycleManager.Temperature; set => LifecycleManager.Temperature = value; }
+    public static int MaxTokens { get => LifecycleManager.MaxTokens; set => LifecycleManager.MaxTokens = value; }
+    public static bool Stream { get => LifecycleManager.Stream; set => LifecycleManager.Stream = value; }
+
+    // go back to bing here 
+    /*
+    I need to understand something specific:
+    i want to have a text field that will be filled with a defauled text the first time the user uses the tool but once they edit that text i want it to be saved in my ToolLifecycleManagerSO so that they don't have to enter it everytime, and if the text is completly deleted it will be filll back with the default text
+     */
     private string _systemMessage = Prompts.SystemMessage;
     private string _defaultUserChatMessage = Prompts.DefaultUserChatMessage;
     private string _defaultUserCommandMessage = Prompts.DefaultUserCommandMessage;
-    public static float Temperature = 0.5f;
-    public static int MaxTokens = -1;
-    public static bool Stream = true;
-    private List<Message> _chatHistory = new List<Message>();
-    private string _assistantMessage;
+
+    private List<Message> _chatHistory { get => LifecycleManager.CachedChatHistory; set => LifecycleManager.CachedChatHistory = value; }
+
+    private bool _isLLMAvailable { get => LifecycleManager.IsLLMAvailable; set => LifecycleManager.IsLLMAvailable = value; }
+
+    public static string ChatHistoryFolderPath { get => LifecycleManager.ChatHistoryFolderPath; set => LifecycleManager.ChatHistoryFolderPath = value; }
+    private SavedChatHistorySO _savedChatHistory;
+
+    public static string GeneratedString = "";
     private string _userChatMessage;
     private string _userCommandMessage;
-    private SavedChatHistorySO _savedChatHistory;
-    string _folderPath = $"Assets/UnityLMForge/ChatHistory";
-    public static string GeneratedString = "";
 
+    // FrontEnd // Window stuff
+    private bool SaveOnNewChat { get => LifecycleManager.SaveOnNewChat; set => LifecycleManager.SaveOnNewChat = value; }
+    private bool SaveOnLoad { get => LifecycleManager.SaveOnLoad; set => LifecycleManager.SaveOnLoad = value; }
 
-    private bool _isLLMAvailable = true;
+    bool _callOnAwake { get => LifecycleManager.CallOnAwake; set => LifecycleManager.CallOnAwake = value; }
+    bool _saveOnClose { get => LifecycleManager.SaveOnClose; set => LifecycleManager.SaveOnClose = value;}
 
-    // Window stuff
     private Vector2 _scrollPositionSystemMessage;
     private Vector2 _scrollPositionUserChatMessage;
     private Vector2 _scrollPositionUserCommandMessage;
@@ -51,30 +66,19 @@ public class LLMChatBot : EditorWindow
 
     GUIStyle _roleStyle;
     GUIStyle _messageStyle;
-    private TextEditor _textEditor = new TextEditor();
-
 
     private int _selectedTab = 0;
     private Color _chatHistoryColor;
-
-
-    bool _saveOnNewChat = false;
-    bool _saveOnload = false;
-
-
-    // cache the bool in user settings, or just create a scriptable object that hold the settings
-    bool _callOnAwake = false;
-    bool _saveOnClose = false;
-
-
 
     private string[] savedChatHistoryPaths;
     private int selectedChatHistoryIndex;
 
 
-
+    //! Should only handle Only Frontend and extract the LLMChatBot logic to another script
     void OnEnable()
     {
+        LifecycleManager = AssetDatabase.LoadAssetAtPath<ToolLifecycleManagerSO>("Assets/UnityLMForge/ToolLifecycleManager.asset");
+
         _chatHistoryColor = new(0.1f, 0.1f, 0.1f);
 
         RefreshChatHistory();
@@ -85,10 +89,15 @@ public class LLMChatBot : EditorWindow
         _userCommandMessage = _defaultUserCommandMessage;
     }
 
-    [MenuItem("UnityLLMForge/LLMChatBot")] 
+    [MenuItem("UnityLLMForge/LLMChatBot")]
     public static void ShowWindow()
     {
-        GetWindow<LLMChatBot>("LLMChatBot");
+        GetWindow<LLMAssistant>("LLMChatBot");
+    }
+
+    public void OnInspectorUpdate()
+    {
+        Repaint();
     }
 
     private void OnGUI()
@@ -132,8 +141,8 @@ public class LLMChatBot : EditorWindow
                 }
 
                 EditorGUILayout.LabelField("Profile Description");
-                _scrollPositionSystemMessage = EditorGUILayout.BeginScrollView(_scrollPositionSystemMessage, GUILayout.Height(300)); 
-                _systemMessage = GUILayout.TextArea(_systemMessage, GUILayout.ExpandHeight(true)); 
+                _scrollPositionSystemMessage = EditorGUILayout.BeginScrollView(_scrollPositionSystemMessage, GUILayout.Height(300));
+                _systemMessage = GUILayout.TextArea(_systemMessage, GUILayout.ExpandHeight(true));
                 EditorGUILayout.EndScrollView();
                 break;
             case 1:
@@ -143,13 +152,13 @@ public class LLMChatBot : EditorWindow
                 {
                     _ = InitializeNewChat();
                 }
-                _saveOnNewChat = EditorGUILayout.Toggle("Save current chat OnNew Chat", _saveOnNewChat);
+                SaveOnNewChat = EditorGUILayout.Toggle("Save current chat OnNew Chat", SaveOnNewChat);
 
                 if (GUILayout.Button("Save Chat History"))
                 {
                     SaveChatHistory(_chatHistory);
                 }
-                
+
                 string[] savedChatHistoryNames = savedChatHistoryPaths.Select(path => Path.GetFileNameWithoutExtension(path)).ToArray();
                 selectedChatHistoryIndex = EditorGUILayout.Popup("Chat History", selectedChatHistoryIndex, savedChatHistoryNames);
 
@@ -161,12 +170,12 @@ public class LLMChatBot : EditorWindow
                         _savedChatHistory = AssetDatabase.LoadAssetAtPath<SavedChatHistorySO>(savedChatHistoryPaths[selectedChatHistoryIndex]);
                 }
 
-                _saveOnload = EditorGUILayout.Toggle("Save current chat OnLoad ", _saveOnload);
+                SaveOnLoad = EditorGUILayout.Toggle("Save current chat OnLoad ", SaveOnLoad);
 
-                if (GUILayout.Button("Refresh Chat History List"))
-                {
-                    RefreshChatHistory();
-                }
+                // if (GUILayout.Button("Refresh Chat History List"))
+                // {
+                //     RefreshChatHistory();
+                // }
 
                 if (GUILayout.Button("Load Chat History"))
                 {
@@ -182,8 +191,8 @@ public class LLMChatBot : EditorWindow
 
                     if (message.role == "user" && message.content == _defaultUserChatMessage)
                         continue;
-                        
-                    
+
+
                     string messageRole;
                     if (i == 1)
                         messageRole = message.role + ": ";
@@ -218,7 +227,7 @@ public class LLMChatBot : EditorWindow
                 {
                     if (onEnter)
                         _userChatMessage = _userChatMessage.TrimEnd('\n');
-                    
+
                     SendMessage();
                     _scrollPositionChatHistory.y = Mathf.Infinity;
                     Repaint();
@@ -274,7 +283,7 @@ public class LLMChatBot : EditorWindow
 
     private void RefreshChatHistory()
     {
-        string[] guids = AssetDatabase.FindAssets("t:SavedChatHistorySO", new[] { _folderPath });
+        string[] guids = AssetDatabase.FindAssets("t:SavedChatHistorySO", new[] { ChatHistoryFolderPath });
         savedChatHistoryPaths = new string[guids.Length];
         for (int i = 0; i < guids.Length; i++)
         {
@@ -291,24 +300,24 @@ public class LLMChatBot : EditorWindow
             Debug.LogError("Invalid chat history selected");
             return;
         }
-        
-        if (_saveOnload == true)
+
+        if (SaveOnLoad == true)
         {
             var index = 0;
             if (selectedChatHistoryIndex <= savedChatHistoryPaths.Length - 1)
                 index = selectedChatHistoryIndex;
-            
+
             SaveChatHistory(_chatHistory, false);
         }
-        
+
         _chatHistory = new List<Message>(_savedChatHistory.ChatHistory);
     }
 
     private async Task InitializeNewChat()
     {
-        selectedChatHistoryIndex  = -1;
+        selectedChatHistoryIndex = -1;
 
-        if (_saveOnNewChat == true)
+        if (SaveOnNewChat == true)
             SaveChatHistory(_chatHistory, false);
 
         while (!_isLLMAvailable)
@@ -316,7 +325,7 @@ public class LLMChatBot : EditorWindow
             await Task.Delay(100);
         }
 
-        _chatHistory.Clear();   
+        _chatHistory.Clear();
         _chatHistory.Add(new Message { role = "system", content = _systemMessage });
 
         if (String.IsNullOrEmpty(_userChatMessage))
@@ -339,7 +348,7 @@ public class LLMChatBot : EditorWindow
         saveSlot.ChatHistory = new(messages);
         string dateTime = DateTime.Now.ToString("yy-MM-dd HH-mm");
 
-        string assetPath = _folderPath + $"/{dateTime} Chat History.asset";
+        string assetPath = ChatHistoryFolderPath + $"/{dateTime} Chat History.asset";
         AssetDatabase.CreateAsset(saveSlot, assetPath);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
@@ -347,7 +356,7 @@ public class LLMChatBot : EditorWindow
 
         if (setIndex)
             selectedChatHistoryIndex = savedChatHistoryPaths.Length;
-       
+
         _ = RenameChatHistory(dateTime, assetPath);
 
     }
@@ -355,7 +364,7 @@ public class LLMChatBot : EditorWindow
     private async Task RenameChatHistory(string dateTime, string assetPath)
     {
 
-        _chatHistory.Add(new Message { role = "user", content = Prompts.TitlePrompt});
+        _chatHistory.Add(new Message { role = "user", content = Prompts.TitlePrompt });
         await LLMChat();
 
         string chatHistoryName = CleanAssetName(_chatHistory[_chatHistory.Count - 1].content);
@@ -409,7 +418,7 @@ public class LLMChatBot : EditorWindow
             {
                 if (_chatHistory.Last().role == "assistant")
                     _chatHistory.RemoveAt(_chatHistory.Count - 1);
-                
+
                 _chatHistory.Add(new Message { role = "assistant", content = messageContent });
                 Repaint();
             });
@@ -434,9 +443,9 @@ public class LLMChatBot : EditorWindow
         {
             Debug.Log("LLM is not available");
             return;
-        }   
-        
-        AssistantCommand.InitializeCommand(_userCommandMessage);    
+        }
+
+        AssistantCommand.InitializeCommand(_userCommandMessage);
     }
 
     public void StopGenerating()

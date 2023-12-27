@@ -20,7 +20,7 @@ public class AssistantCommand
 
     static private string _simplifyCommandToTasksPrompt = Prompts.SimplifyCommandToTasksPrompt;
 
-    public static LocalLLMInput LLMInput;
+    public static LocalLLMInput LLMInput { get => LLMAssistant.LifecycleManager.CachedLLMInput; set => LLMAssistant.LifecycleManager.CachedLLMInput = value; }
 
     private static StringBuilder _errorContent = new StringBuilder();
 
@@ -51,7 +51,7 @@ public class AssistantCommand
 
     public static async void InitializeCommand(string prompt)
     {
-        LLMChatBot.GeneratedString = "coding...";
+        LLMAssistant.GeneratedString = "coding...";
         //_tasks = await SimplifyCommand(prompt);
 
         // to simplify things let's not separate the tasks for now
@@ -124,11 +124,11 @@ public class AssistantCommand
     {
         await LLMConnection.SendAndReceiveStreamedMessages(LLMInput, (generatedScript) =>
         {
-            LLMChatBot.GeneratedString = generatedScript;
+            LLMAssistant.GeneratedString = generatedScript;
         });
 
-        LLMChatBot.GeneratedString = GetOnlyScript(LLMChatBot.GeneratedString);
-        script = LLMChatBot.GeneratedString;
+        LLMAssistant.GeneratedString = GetOnlyScript(LLMAssistant.GeneratedString);
+        script = LLMAssistant.GeneratedString;
 
         CreateScriptAsset(script, isUpdatingScript);
     }
@@ -156,7 +156,7 @@ public class AssistantCommand
     {
         _isCorrectingScript = false;
         if (isUpdatingScript)
-            CreateScriptAsset(LLMChatBot.GeneratedString, isUpdatingScript);
+            CreateScriptAsset(LLMAssistant.GeneratedString, isUpdatingScript);
 
         if (!TempFileExists)
             return;
@@ -176,7 +176,7 @@ public class AssistantCommand
         LLMInput.messages.Add(new Message
         {
             role = Role.assistant.ToString(),
-            content = "```csharp\n" + LLMChatBot.GeneratedString + "\n```"
+            content = "```csharp\n" + LLMAssistant.GeneratedString + "\n```"
         });
 
         LLMInput.messages.Add(new Message
@@ -188,7 +188,7 @@ public class AssistantCommand
         });
 
         _errorContent.Clear();
-        LLMChatBot.GeneratedString = "Correcting...";
+        LLMAssistant.GeneratedString = "Correcting...";
         await CreateScript(true);
     }
 

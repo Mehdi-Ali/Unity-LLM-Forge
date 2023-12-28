@@ -10,32 +10,32 @@ using System.Linq;
 using System.Text;
 
 
-public class AssistantCommand
+public class UAACommand
 {
-    public static ToolLifecycleManagerSO LifecycleManager;
+    public static UAASettingsSO LifecycleManager;
 
     static private List<string> _tasks = new List<string>();
-    private const string TempFilePath = "Assets/UnityLMForge/Commands/GeneratedScript_temp.cs";
+    private const string TempFilePath = "Assets/UAA/Commands/UAAGeneratedScript_temp.cs";
 
     static bool TempFileExists => System.IO.File.Exists(TempFilePath);
     static string script = "";
 
-    static private string _simplifyCommandToTasksPrompt = Prompts.SimplifyCommandToTasksPrompt;
+    static private string _simplifyCommandToTasksPrompt = UAAPrompts.SimplifyCommandToTasksPrompt;
 
-    public static LocalLLMInput LLMInput { get => LLMAssistant.LifecycleManager.CachedLLMInput; set => LLMAssistant.LifecycleManager.CachedLLMInput = value; }
-    public static LifecycleState Lifecycle { get => LifecycleManager.Lifecycle; set => LifecycleManager.Lifecycle = value; }
+    public static LocalLLMInput LLMInput { get => UAAWindow.LifecycleManager.CachedLLMInput; set => UAAWindow.LifecycleManager.CachedLLMInput = value; }
+    public static CorrectingStates CorrectingState { get => LifecycleManager.CorrectingState; set => LifecycleManager.CorrectingState = value; }
 
     private static StringBuilder _errorContent = new StringBuilder();
 
 
 
-    static AssistantCommand()
+    static UAACommand()
     {
         Application.logMessageReceived += SaveLogMessages;
         AssemblyReloadEvents.afterAssemblyReload += CheckForIDEErrors;
 
         if (LifecycleManager == null)
-            LifecycleManager = AssetDatabase.LoadAssetAtPath<ToolLifecycleManagerSO>("Assets/UnityLMForge/ToolLifecycleManager.asset");
+            LifecycleManager = AssetDatabase.LoadAssetAtPath<UAASettingsSO>("Assets/UAA/Settings/UAASettings.asset");
     }
 
     public static void UnsubscribeFromEvents()
@@ -55,17 +55,18 @@ public class AssistantCommand
     [InitializeOnLoadMethod]
     public static async void Resume()
     {
+        // add a bool that control if we are correcting or not ( idk if only doable through the CorrectingState)
         await Task.Delay(1000);
         Debug.Log("Resume");
-        switch (Lifecycle)
+        switch (CorrectingState)
         {
-            case LifecycleState.FixingIDErrors:
+            case CorrectingStates.FixingIDErrors:
                 CheckForIDEErrors();
                 break;
-            case LifecycleState.FixingRuntimeErrors:
+            case CorrectingStates.FixingRuntimeErrors:
                 CheckForRuntimeErrors();
                 break;
-            case LifecycleState.idle:
+            case CorrectingStates.NotFixing:
                 return;
         }
     }
@@ -75,7 +76,7 @@ public class AssistantCommand
         //_tasks = await SimplifyCommand(prompt);
         // to simplify things let's not separate the tasks for now
 
-        LLMAssistant.GeneratedString = "coding...";
+        UAAWindow.GeneratedString = "coding...";
         await Task.Delay(0);
         HandleTask(prompt);
     }
@@ -84,9 +85,9 @@ public class AssistantCommand
     {
         commandPrompt = _simplifyCommandToTasksPrompt + commandPrompt;
 
-        LLMInput = LLMConnection.CreateLLMInput(Prompts.SimplifyCommandToTasksPrompt, commandPrompt);
+        LLMInput = UAAConnection.CreateLLMInput(UAAPrompts.SimplifyCommandToTasksPrompt, commandPrompt);
         string tasks = "";
-        await LLMConnection.SendAndReceiveStreamedMessages(LLMInput, (response) =>
+        await UAAConnection.SendAndReceiveStreamedMessages(LLMInput, (response) =>
         {
             tasks = response;
             Debug.Log(response);
@@ -111,21 +112,21 @@ public class AssistantCommand
 
     private static async void HandleTask(string task)
     {
-        LLMInput = LLMConnection.CreateLLMInput(Prompts.TaskToScriptPrompt, "The task is described as follows:\n" + task);
+        LLMInput = UAAConnection.CreateLLMInput(UAAPrompts.TaskToScriptPrompt, "The task is described as follows:\n" + task);
         await CreateScript();
     }
 
     private static async Task CreateScript(bool isUpdatingScript = false)
     {
-        await LLMConnection.SendAndReceiveStreamedMessages(LLMInput, (generatedScript) =>
+        await UAAConnection.SendAndReceiveStreamedMessages(LLMInput, (generatedScript) =>
         {
-            LLMAssistant.GeneratedString = generatedScript;
+            UAAWindow.GeneratedString = generatedScript;
         });
 
-        LLMAssistant.GeneratedString = GetOnlyScript(LLMAssistant.GeneratedString);
-        script = LLMAssistant.GeneratedString;
+        UAAWindow.GeneratedString = GetOnlyScript(UAAWindow.GeneratedString);
+        script = UAAWindow.GeneratedString;
 
-        Lifecycle = LifecycleState.FixingIDErrors;
+        CorrectingState = CorrectingStates.FixingIDErrors;
         CreateScriptAsset(script, isUpdatingScript);
     }
 
@@ -153,7 +154,7 @@ public class AssistantCommand
         if (!TempFileExists)
             return;
 
-        Lifecycle = LifecycleState.FixingRuntimeErrors;
+        CorrectingState = CorrectingStates.FixingRuntimeErrors;
 
         EditorApplication.ExecuteMenuItem("Edit/Do Task");
         Resume();
@@ -172,7 +173,7 @@ public class AssistantCommand
             await CorrectScript();
         else
         {
-            Lifecycle = LifecycleState.idle;
+            CorrectingState = CorrectingStates.NotFixing;
             ExecuteScript();
         }
     }
@@ -183,7 +184,7 @@ public class AssistantCommand
             await CorrectScript();
         else
         {
-            Lifecycle = LifecycleState.idle;
+            CorrectingState = CorrectingStates.NotFixing;
         }
     }
 
@@ -194,7 +195,7 @@ public class AssistantCommand
         LLMInput.messages.Add(new Message
         {
             role = Role.assistant.ToString(),
-            content = "```csharp\n" + LLMAssistant.GeneratedString + "\n```"
+            content = "```csharp\n" + UAAWindow.GeneratedString + "\n```"
         });
 
         LLMInput.messages.Add(new Message
@@ -202,11 +203,11 @@ public class AssistantCommand
             role = Role.user.ToString(),
             content = "Here's Unity's Console Error Logs :\n" +
                         _errorContent.ToString() +
-                        Prompts.CorrectScriptPrompt
+                        UAAPrompts.CorrectScriptPrompt
         });
 
         _errorContent.Clear();
-        LLMAssistant.GeneratedString = "Correcting...";
+        UAAWindow.GeneratedString = "Correcting...";
         await CreateScript(true);
     }
 

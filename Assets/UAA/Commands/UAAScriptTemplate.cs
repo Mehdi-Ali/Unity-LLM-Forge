@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 
-public class ScriptTemplate : EditorWindow
+public class UAAScriptTemplate : EditorWindow
 {
     //[MenuItem("Edit/Do Task")]
     private static void DoTask()

@@ -16,9 +16,9 @@ using System.IO;
 using System.Threading.Tasks;
 using UnityEngine.SocialPlatforms;
 
-public class LLMAssistant : EditorWindow
+public class UAAWindow : EditorWindow
 {
-    public static ToolLifecycleManagerSO LifecycleManager;
+    public static UAASettingsSO LifecycleManager;
 
     public static string LocalURL { get => LifecycleManager.LocalURL; set => LifecycleManager.LocalURL = value; }
     public static string OpenAiURL { get => LifecycleManager.OpenAiURL; set => LifecycleManager.OpenAiURL = value; }
@@ -37,16 +37,16 @@ public class LLMAssistant : EditorWindow
     i want to have a text field that will be filled with a defauled text the first time the user uses the tool but once they edit that text i want it to be saved in my ToolLifecycleManagerSO so that they don't have to enter it everytime, and if the text is completly deleted it will be filll back with the default text
      */
     // if (string.IsNullOrEmpty(value) return/get defaultSystemMessage else return/get value;
-    private string _systemMessage = Prompts.SystemMessage;
-    private string _defaultUserChatMessage = Prompts.DefaultUserChatMessage;
-    private string _defaultUserCommandMessage = Prompts.DefaultUserCommandMessage;
+    private string _systemMessage = UAAPrompts.SystemMessage;
+    private string _defaultUserChatMessage = UAAPrompts.DefaultUserChatMessage;
+    private string _defaultUserCommandMessage = UAAPrompts.DefaultUserCommandMessage;
 
     private List<Message> _chatHistory { get => LifecycleManager.CachedChatHistory; set => LifecycleManager.CachedChatHistory = value; }
 
     private bool _isLLMAvailable { get => LifecycleManager.IsLLMAvailable; set => LifecycleManager.IsLLMAvailable = value; }
 
     public static string ChatHistoryFolderPath { get => LifecycleManager.ChatHistoryFolderPath; set => LifecycleManager.ChatHistoryFolderPath = value; }
-    private SavedChatHistorySO _savedChatHistory;
+    private UAAChatHistorySO _savedChatHistory;
 
     public static string GeneratedString = "";
     private string _userChatMessage;
@@ -65,6 +65,8 @@ public class LLMAssistant : EditorWindow
     private Vector2 _scrollPositionChatHistory;
     private Vector2 _scrollPositionGeneratedScript;
 
+    private float totalHeight;
+
     GUIStyle _roleStyle;
     GUIStyle _messageStyle;
 
@@ -78,12 +80,12 @@ public class LLMAssistant : EditorWindow
     //! Should only handle Only Frontend and extract the LLMChatBot logic to another script
     void OnEnable()
     {
-        LifecycleManager = AssetDatabase.LoadAssetAtPath<ToolLifecycleManagerSO>("Assets/UnityLMForge/ToolLifecycleManager.asset");
+        LifecycleManager = AssetDatabase.LoadAssetAtPath<UAASettingsSO>("Assets/UAA/Settings/UAASettings.asset");
 
         if (LifecycleManager == null)
         {
-            LifecycleManager = CreateInstance<ToolLifecycleManagerSO>();
-            AssetDatabase.CreateAsset(LifecycleManager, "Assets/UnityLMForge/ToolLifecycleManager.asset");
+            LifecycleManager = CreateInstance<UAASettingsSO>();
+            AssetDatabase.CreateAsset(LifecycleManager, "Assets/UAA/Settings/UAASettings.asset");
         }
 
         _chatHistoryColor = new(0.1f, 0.1f, 0.1f);
@@ -96,10 +98,10 @@ public class LLMAssistant : EditorWindow
         _userCommandMessage = _defaultUserCommandMessage;
     }
 
-    [MenuItem("UnityLLMForge/LLMChatBot")]
+    [MenuItem("Window/UAA - Unity AI Assistant")]
     public static void ShowWindow()
     {
-        GetWindow<LLMAssistant>("LLMChatBot");
+        GetWindow<UAAWindow>("LLMChatBot");
     }
 
     public void OnInspectorUpdate()
@@ -123,7 +125,7 @@ public class LLMAssistant : EditorWindow
         var onEnter = (Event.current.type == EventType.KeyUp && Event.current.keyCode == KeyCode.Return && !Event.current.shift);
 
 
-        string[] tabs = { "Assistant Profile", "Assistant Chat", "Assistant Command" };
+        string[] tabs = { "UAA Profile", "UAA Chat", "UAA Command" };
         _selectedTab = GUILayout.Toolbar(_selectedTab, tabs);
 
         switch (_selectedTab)
@@ -174,15 +176,15 @@ public class LLMAssistant : EditorWindow
                     if (selectedChatHistoryIndex == -1)
                         _savedChatHistory = null;
                     else
-                        _savedChatHistory = AssetDatabase.LoadAssetAtPath<SavedChatHistorySO>(savedChatHistoryPaths[selectedChatHistoryIndex]);
+                        _savedChatHistory = AssetDatabase.LoadAssetAtPath<UAAChatHistorySO>(savedChatHistoryPaths[selectedChatHistoryIndex]);
                 }
 
                 SaveOnLoad = EditorGUILayout.Toggle("Save current chat OnLoad ", SaveOnLoad);
 
-                // if (GUILayout.Button("Refresh Chat History List"))
-                // {
-                //     RefreshChatHistory();
-                // }
+                if (GUILayout.Button("Refresh Chat History List"))
+                {
+                    RefreshChatHistory();
+                }
 
                 if (GUILayout.Button("Load Chat History"))
                 {
@@ -192,6 +194,8 @@ public class LLMAssistant : EditorWindow
                 EditorGUILayout.LabelField("Chat History", EditorStyles.boldLabel);
                 _scrollPositionChatHistory = EditorGUILayout.BeginScrollView(_scrollPositionChatHistory, GUILayout.Height(500));
 
+                totalHeight = - 475f;
+
                 for (int i = 1; i < _chatHistory.Count; i++)
                 {
                     Message message = _chatHistory[i];
@@ -199,13 +203,11 @@ public class LLMAssistant : EditorWindow
                     if (message.role == "user" && message.content == _defaultUserChatMessage)
                         continue;
 
-
                     string messageRole;
                     if (i == 1)
                         messageRole = message.role + ": ";
                     else
                         messageRole = "\n" + message.role + ": ";
-
 
                     _roleStyle.normal.textColor = message.role == "user" ? Color.magenta : Color.cyan;
                     GUIContent roleContent = new GUIContent(messageRole);
@@ -221,9 +223,12 @@ public class LLMAssistant : EditorWindow
                     EditorGUI.DrawRect(backgroundRect, _chatHistoryColor);
                     contentRect = new Rect(contentRect.x + 10, contentRect.y, contentRect.width - 20, contentHeight);
                     EditorGUI.SelectableLabel(contentRect, message.content, _messageStyle);
+
+                    totalHeight += roleHeight + contentHeight;
                 }
 
                 EditorGUILayout.EndScrollView();
+
 
                 EditorGUILayout.LabelField("Message The Assistant...", EditorStyles.boldLabel);
                 _scrollPositionUserChatMessage = EditorGUILayout.BeginScrollView(_scrollPositionUserChatMessage, GUILayout.Height(100));
@@ -268,21 +273,21 @@ public class LLMAssistant : EditorWindow
                 EditorGUILayout.LabelField("Validate Step...", EditorStyles.boldLabel);
 
                 if (GUILayout.Button("Execute Script"))
-                    AssistantCommand.ExecuteScript();
+                    UAACommand.ExecuteScript();
 
                 if (GUILayout.Button("Ask Assistant to correct Script"))
-                    AssistantCommand.CorrectScript();
+                    UAACommand.CorrectScript();
 
                 if (GUILayout.Button("ClearLogs"))
-                    AssistantCommand.ClearLog();
+                    UAACommand.ClearLog();
 
                 if (GUILayout.Button("Delete Generated Script"))
-                    AssistantCommand.DeleteGeneratedScript();
+                    UAACommand.DeleteGeneratedScript();
 
                 if (GUILayout.Button("Save Command History"))
-                    SaveChatHistory(AssistantCommand.LLMInput.messages, false);
+                    SaveChatHistory(UAACommand.LLMInput.messages, false);
                 if (GUILayout.Button("Log command History"))
-                    LogMessages(AssistantCommand.LLMInput.messages);
+                    LogMessages(UAACommand.LLMInput.messages);
 
                 break;
         }
@@ -290,7 +295,7 @@ public class LLMAssistant : EditorWindow
 
     private void RefreshChatHistory()
     {
-        string[] guids = AssetDatabase.FindAssets("t:SavedChatHistorySO", new[] { ChatHistoryFolderPath });
+        string[] guids = AssetDatabase.FindAssets($"t:{nameof(UAAChatHistorySO)}", new[] { ChatHistoryFolderPath });
         savedChatHistoryPaths = new string[guids.Length];
         for (int i = 0; i < guids.Length; i++)
         {
@@ -347,11 +352,10 @@ public class LLMAssistant : EditorWindow
 
     private void SaveChatHistory(List<Message> messages, bool setIndex = true)
     {
-        LogMessages(messages);
         if (messages.Count <= 0)
             return;
 
-        var saveSlot = ScriptableObject.CreateInstance<SavedChatHistorySO>();
+        var saveSlot = ScriptableObject.CreateInstance<UAAChatHistorySO>();
         saveSlot.ChatHistory = new(messages);
         string dateTime = DateTime.Now.ToString("yy-MM-dd HH-mm");
 
@@ -371,7 +375,7 @@ public class LLMAssistant : EditorWindow
     private async Task RenameChatHistory(string dateTime, string assetPath)
     {
 
-        _chatHistory.Add(new Message { role = "user", content = Prompts.TitlePrompt });
+        _chatHistory.Add(new Message { role = "user", content = UAAPrompts.TitlePrompt });
         await LLMChat();
 
         string chatHistoryName = CleanAssetName(_chatHistory[_chatHistory.Count - 1].content);
@@ -421,12 +425,16 @@ public class LLMAssistant : EditorWindow
 
         if (Stream)
         {
-            await LLMConnection.SendAndReceiveStreamedMessages(llmInput, messageContent =>
+            await UAAConnection.SendAndReceiveStreamedMessages(llmInput, messageContent =>
             {
                 if (_chatHistory.Last().role == "assistant")
                     _chatHistory.RemoveAt(_chatHistory.Count - 1);
 
                 _chatHistory.Add(new Message { role = "assistant", content = messageContent });
+
+                if (_scrollPositionChatHistory.y >  totalHeight * 0.75)
+                    _scrollPositionChatHistory.y = Mathf.Infinity;
+
                 Repaint();
             });
         }
@@ -434,7 +442,7 @@ public class LLMAssistant : EditorWindow
         else
         {
             _chatHistory.Add(new Message { role = "assistant", content = "Crafting a response…" });
-            string messageContent = await LLMConnection.SendAndReceiveNonStreamedMessages(llmInput);
+            string messageContent = await UAAConnection.SendAndReceiveNonStreamedMessages(llmInput);
             _chatHistory.RemoveAt(_chatHistory.Count - 1);
             _chatHistory.Add(new Message { role = "assistant", content = messageContent });
             Repaint();
@@ -452,13 +460,13 @@ public class LLMAssistant : EditorWindow
             return;
         }
 
-        AssistantCommand.InitializeCommand(_userCommandMessage);
+        UAACommand.InitializeCommand(_userCommandMessage);
     }
 
     public void StopGenerating()
     {
         _isLLMAvailable = true;
-        LLMConnection.StopGenerating();
+        UAAConnection.StopGenerating();
     }
 
 
@@ -475,7 +483,7 @@ public class LLMAssistant : EditorWindow
         if (_saveOnClose)
             SaveChatHistory(_chatHistory);
 
-        AssistantCommand.UnsubscribeFromEvents();
+        UAACommand.UnsubscribeFromEvents();
     }
 }
 

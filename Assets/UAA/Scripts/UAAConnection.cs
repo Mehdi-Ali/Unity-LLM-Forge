@@ -12,11 +12,11 @@ using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class LLMConnection
+public class UAAConnection
 {
-    private static string Url => LLMAssistant.LocalLLM ? LLMAssistant.LocalURL : LLMAssistant.OpenAiURL;
-    private static string OpenAI_API_Key => LLMAssistant.OpenAI_API_Key;
-    private static string OpenAI_API_model => LLMAssistant.OpenAI_API_model;
+    private static string Url => UAAWindow.LocalLLM ? UAAWindow.LocalURL : UAAWindow.OpenAiURL;
+    private static string OpenAI_API_Key => UAAWindow.OpenAI_API_Key;
+    private static string OpenAI_API_model => UAAWindow.OpenAI_API_model;
 
     public static LocalLLMInput CreateLLMInput(string systemPrompt, string userPrompt)
     {
@@ -36,9 +36,9 @@ public class LLMConnection
                 },
             },
 
-            temperature = LLMAssistant.Temperature,
-            max_tokens = LLMAssistant.MaxTokens,
-            stream = LLMAssistant.Stream,
+            temperature = UAAWindow.Temperature,
+            max_tokens = UAAWindow.MaxTokens,
+            stream = UAAWindow.Stream,
         };
     }
 
@@ -48,7 +48,7 @@ public class LLMConnection
         var post = UnityWebRequest.PostWwwForm(Url, "POST");
         string jsonMessage;
 
-        if (!LLMAssistant.LocalLLM)
+        if (!UAAWindow.LocalLLM)
         {
             jsonMessage = JsonConvert.SerializeObject(new OpenAIRequest
             {
@@ -99,7 +99,7 @@ public class LLMConnection
         HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, Url);
         string jsonMessage = "";
 
-        if (!LLMAssistant.LocalLLM)
+        if (!UAAWindow.LocalLLM)
         {
             jsonMessage = JsonConvert.SerializeObject(new OpenAIRequest
             {
@@ -131,7 +131,7 @@ public class LLMConnection
             {
                 string chunk = Encoding.UTF8.GetString(buffer, 0, bytesRead);
 
-                if (!LLMAssistant.LocalLLM)
+                if (!UAAWindow.LocalLLM)
                 {
                     List<string> dataList = SplitJsonObjects(chunk);
                     foreach (var data in dataList)

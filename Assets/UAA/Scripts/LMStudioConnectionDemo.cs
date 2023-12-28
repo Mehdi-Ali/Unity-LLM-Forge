@@ -8,7 +8,7 @@ using EasyButtons;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-public class LMStudioConnection : MonoBehaviour
+public class LMStudioConnectionDemo : MonoBehaviour
 {
     [SerializeField] string url = "http://localhost:1234/v1/chat/completions";
     [SerializeField, TextArea(3, 20)] private string _systemMessage;

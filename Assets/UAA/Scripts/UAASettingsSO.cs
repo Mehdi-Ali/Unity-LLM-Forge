@@ -3,8 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "ToolLifecycleManager", menuName = "ScriptableObjects/UnityLMForge/ToolLifecycleManager", order = 1)]
-public class ToolLifecycleManagerSO : ScriptableObject
+[CreateAssetMenu(fileName = "UAASettings", menuName = "ScriptableObjects/UnityLMForge/UAASettings", order = 1)]
+public class UAASettingsSO : ScriptableObject
 {
     [Header("LLM API Settings")]
     public string LocalURL = "http://localhost:1234/v1/chat/completions";
@@ -25,26 +25,25 @@ public class ToolLifecycleManagerSO : ScriptableObject
     public bool SaveOnClose = false;
 
     [Header("Paths")]
-    public string ChatHistoryFolderPath = $"Assets/UnityLMForge/ChatHistory";
+    public string ChatHistoryFolderPath = "Assets/UAA/ChatHistory";
 
     [Header("Runtime / cache")]
     public bool IsLLMAvailable = true;
-    public LifecycleState Lifecycle = LifecycleState.idle;
+    public CorrectingStates CorrectingState = CorrectingStates.NotFixing;
     public List<Message> CachedChatHistory = new List<Message>();
     public LocalLLMInput CachedLLMInput;
 
 
     [Header("Messages")]
-    public string SystemMessage = Prompts.SystemMessage;
-    public string DefaultUserChatMessage = Prompts.DefaultUserChatMessage;
-    public string DefaultUserCommandMessage = Prompts.DefaultUserCommandMessage;
+    public string SystemMessage = UAAPrompts.SystemMessage;
+    public string DefaultUserChatMessage = UAAPrompts.DefaultUserChatMessage;
+    public string DefaultUserCommandMessage = UAAPrompts.DefaultUserCommandMessage;
 }
 
-// i might change the name to CommandLifecycle
 [Serializable]
-public enum LifecycleState
+public enum CorrectingStates
 {
-    idle,
+    NotFixing,
     FixingIDErrors,
     FixingRuntimeErrors
 }

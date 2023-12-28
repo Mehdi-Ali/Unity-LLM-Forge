@@ -1,16 +1,19 @@
 using UnityEngine;
 using UnityEditor;
+using System.Linq;
 
 public class GeneratedScript : EditorWindow
 {
     [MenuItem("Edit/Do Task")]
     private static void DoTask()
     {
-        for (int i = 0; i < 10; i++)
+        GameObject[] cubes = FindObjectsOfType<GameObject>()
+            .Where(go => go.name == "Cube")
+            .ToArray();
+
+        foreach (GameObject cube in cubes)
         {
-            Vector3 position = new Vector3(Random.Range(-5f, 5f), Random.Range(-5f, 5f), Random.Range(-5f, 5f));
-            GameObject cube = UnityEngine.Object.Instantiate(Resources.Load("Cube")) as GameObject;
-            cube.transform.position = position;
+            DestroyImmediate(cube, true);
         }
     }
 }

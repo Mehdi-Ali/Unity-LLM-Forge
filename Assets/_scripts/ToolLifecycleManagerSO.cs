@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -23,15 +24,12 @@ public class ToolLifecycleManagerSO : ScriptableObject
     public bool CallOnAwake = false;
     public bool SaveOnClose = false;
 
-    [Header("Run Time")]
-    public bool IsLLMAvailable = true;
-
-
-
     [Header("Paths")]
     public string ChatHistoryFolderPath = $"Assets/UnityLMForge/ChatHistory";
 
-    [Header("cache")]
+    [Header("Runtime / cache")]
+    public bool IsLLMAvailable = true;
+    public LifecycleState Lifecycle = LifecycleState.idle;
     public List<Message> CachedChatHistory = new List<Message>();
     public LocalLLMInput CachedLLMInput;
 
@@ -40,4 +38,13 @@ public class ToolLifecycleManagerSO : ScriptableObject
     public string SystemMessage = Prompts.SystemMessage;
     public string DefaultUserChatMessage = Prompts.DefaultUserChatMessage;
     public string DefaultUserCommandMessage = Prompts.DefaultUserCommandMessage;
+}
+
+// i might change the name to CommandLifecycle
+[Serializable]
+public enum LifecycleState
+{
+    idle,
+    FixingIDErrors,
+    FixingRuntimeErrors
 }

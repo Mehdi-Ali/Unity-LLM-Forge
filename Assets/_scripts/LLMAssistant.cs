@@ -36,6 +36,7 @@ public class LLMAssistant : EditorWindow
     I need to understand something specific:
     i want to have a text field that will be filled with a defauled text the first time the user uses the tool but once they edit that text i want it to be saved in my ToolLifecycleManagerSO so that they don't have to enter it everytime, and if the text is completly deleted it will be filll back with the default text
      */
+    // if (string.IsNullOrEmpty(value) return/get defaultSystemMessage else return/get value;
     private string _systemMessage = Prompts.SystemMessage;
     private string _defaultUserChatMessage = Prompts.DefaultUserChatMessage;
     private string _defaultUserCommandMessage = Prompts.DefaultUserCommandMessage;
@@ -78,6 +79,12 @@ public class LLMAssistant : EditorWindow
     void OnEnable()
     {
         LifecycleManager = AssetDatabase.LoadAssetAtPath<ToolLifecycleManagerSO>("Assets/UnityLMForge/ToolLifecycleManager.asset");
+
+        if (LifecycleManager == null)
+        {
+            LifecycleManager = CreateInstance<ToolLifecycleManagerSO>();
+            AssetDatabase.CreateAsset(LifecycleManager, "Assets/UnityLMForge/ToolLifecycleManager.asset");
+        }
 
         _chatHistoryColor = new(0.1f, 0.1f, 0.1f);
 

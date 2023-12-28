@@ -12,6 +12,8 @@ using System.Text;
 
 public class AssistantCommand
 {
+    public static ToolLifecycleManagerSO LifecycleManager;
+
     static private List<string> _tasks = new List<string>();
     private const string TempFilePath = "Assets/UnityLMForge/Commands/GeneratedScript_temp.cs";
 
@@ -21,27 +23,28 @@ public class AssistantCommand
     static private string _simplifyCommandToTasksPrompt = Prompts.SimplifyCommandToTasksPrompt;
 
     public static LocalLLMInput LLMInput { get => LLMAssistant.LifecycleManager.CachedLLMInput; set => LLMAssistant.LifecycleManager.CachedLLMInput = value; }
+    public static LifecycleState Lifecycle { get => LifecycleManager.Lifecycle; set => LifecycleManager.Lifecycle = value; }
 
     private static StringBuilder _errorContent = new StringBuilder();
-
-    private static bool _isCorrectingScript = false;
 
 
 
     static AssistantCommand()
     {
-        Application.logMessageReceived += HandleLog;
+        Application.logMessageReceived += SaveLogMessages;
         AssemblyReloadEvents.afterAssemblyReload += CheckForIDEErrors;
 
+        if (LifecycleManager == null)
+            LifecycleManager = AssetDatabase.LoadAssetAtPath<ToolLifecycleManagerSO>("Assets/UnityLMForge/ToolLifecycleManager.asset");
     }
 
     public static void UnsubscribeFromEvents()
     {
-        Application.logMessageReceived -= HandleLog;
+        Application.logMessageReceived -= SaveLogMessages;
         AssemblyReloadEvents.afterAssemblyReload -= CheckForIDEErrors;
     }
 
-    private static void HandleLog(string logString, string stackTrace, LogType type)
+    private static void SaveLogMessages(string logString, string stackTrace, LogType type)
     {
         if (type == LogType.Error || type == LogType.Exception)
         {
@@ -49,16 +52,33 @@ public class AssistantCommand
         }
     }
 
+    [InitializeOnLoadMethod]
+    public static async void Resume()
+    {
+        await Task.Delay(1000);
+        Debug.Log("Resume");
+        switch (Lifecycle)
+        {
+            case LifecycleState.FixingIDErrors:
+                CheckForIDEErrors();
+                break;
+            case LifecycleState.FixingRuntimeErrors:
+                CheckForRuntimeErrors();
+                break;
+            case LifecycleState.idle:
+                return;
+        }
+    }
+
     public static async void InitializeCommand(string prompt)
     {
-        LLMAssistant.GeneratedString = "coding...";
         //_tasks = await SimplifyCommand(prompt);
-
         // to simplify things let's not separate the tasks for now
+
+        LLMAssistant.GeneratedString = "coding...";
         await Task.Delay(0);
         HandleTask(prompt);
     }
-
 
     private static async Task<List<string>> SimplifyCommand(string commandPrompt)
     {
@@ -93,31 +113,6 @@ public class AssistantCommand
     {
         LLMInput = LLMConnection.CreateLLMInput(Prompts.TaskToScriptPrompt, "The task is described as follows:\n" + task);
         await CreateScript();
-        _isCorrectingScript = true;
-    }
-
-    //[InitializeOnLoadMethod]
-    private static async void CheckForIDEErrors()
-    {
-        if (!_isCorrectingScript)
-            return;
-
-        if (_errorContent.Length > 0)
-            await CorrectScript();
-        else
-            ExecuteScript();
-    }
-    private static async void CheckForRuntimeErrors()
-    {
-        Debug.Log("CheckForRuntimeErrors");
-
-        Debug.Log("ErrorContent: " + _errorContent);
-
-        if (_errorContent.Length > 0)
-            await CorrectScript();
-
-        _isCorrectingScript = true;
-        CheckForIDEErrors();
     }
 
     private static async Task CreateScript(bool isUpdatingScript = false)
@@ -130,6 +125,7 @@ public class AssistantCommand
         LLMAssistant.GeneratedString = GetOnlyScript(LLMAssistant.GeneratedString);
         script = LLMAssistant.GeneratedString;
 
+        Lifecycle = LifecycleState.FixingIDErrors;
         CreateScriptAsset(script, isUpdatingScript);
     }
 
@@ -152,23 +148,45 @@ public class AssistantCommand
         method.Invoke(null, new object[] { TempFilePath, code });
     }
 
-    public static void ExecuteScript(bool isUpdatingScript = false)
+    public static void ExecuteScript()
     {
-        _isCorrectingScript = false;
-        if (isUpdatingScript)
-            CreateScriptAsset(LLMAssistant.GeneratedString, isUpdatingScript);
-
         if (!TempFileExists)
             return;
-        EditorApplication.ExecuteMenuItem("Edit/Do Task");
 
-        //CheckForRuntimeErrors();
+        Lifecycle = LifecycleState.FixingRuntimeErrors;
+
+        EditorApplication.ExecuteMenuItem("Edit/Do Task");
+        Resume();
     }
 
     public static void DeleteGeneratedScript()
     {
         AssetDatabase.DeleteAsset(TempFilePath);
     }
+
+    //[InitializeOnLoadMethod]
+    private static async void CheckForIDEErrors()
+    {
+        Debug.Log("Check For IDE Errors");
+        if (_errorContent.Length > 0)
+            await CorrectScript();
+        else
+        {
+            Lifecycle = LifecycleState.idle;
+            ExecuteScript();
+        }
+    }
+    private static async void CheckForRuntimeErrors()
+    {
+        Debug.Log("Check For Runtime Errors");
+        if (_errorContent.Length > 0)
+            await CorrectScript();
+        else
+        {
+            Lifecycle = LifecycleState.idle;
+        }
+    }
+
 
     public static async Task CorrectScript()
     {
@@ -184,7 +202,7 @@ public class AssistantCommand
             role = Role.user.ToString(),
             content = "Here's Unity's Console Error Logs :\n" +
                         _errorContent.ToString() +
-                        Prompts.CorrectScriptPrompt 
+                        Prompts.CorrectScriptPrompt
         });
 
         _errorContent.Clear();

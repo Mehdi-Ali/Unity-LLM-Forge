@@ -34,8 +34,8 @@ namespace UAA
         public static bool Stream { get => Settings.Stream; set => Settings.Stream = value; }
 
         public static string SystemMessage { get => Settings.SystemMessage; set => Settings.SystemMessage = value; }
-        public static string DefaultUserChatMessage { get => Settings.DefaultUserChatMessage; set => Settings.DefaultUserChatMessage = value; }
-        private string DefaultUserCommandMessage { get => Settings.DefaultUserCommandMessage; set => Settings.DefaultUserCommandMessage = value; }
+        public static string UserChatMessage { get => Settings.DefaultUserChatMessage; set => Settings.DefaultUserChatMessage = value; }
+        private string UserCommandMessage { get => Settings.DefaultUserCommandMessage; set => Settings.DefaultUserCommandMessage = value; }
 
         public static bool IsLLMAvailable { get => Settings.IsLLMAvailable; set => Settings.IsLLMAvailable = value; }
 
@@ -43,8 +43,6 @@ namespace UAA
 
         public static string GeneratedString = "";
         public  static UAAChatHistorySO SavedChatHistory;
-        public static string UserChatMessage;
-        public static string UserCommandMessage;
 
         #region FrontEnd --------------------------------------------------------------------------------------------------------------------------------
         public static bool SaveOnNewChat { get => Settings.SaveOnNewChat; set => Settings.SaveOnNewChat = value; }
@@ -187,9 +185,6 @@ namespace UAA
             {
                 Message message = ChatHistory[i];
 
-                if (message.role == "user" && message.content == DefaultUserChatMessage)
-                    continue;
-
                 string messageRole;
                 if (i == 1)
                     messageRole = message.role + ": ";
@@ -299,9 +294,6 @@ namespace UAA
             UAAChat.RefreshChatHistory();
             if (_callOnAwake)
                 _ = UAAChat.InitializeNewChat();
-
-            UserChatMessage = DefaultUserChatMessage;
-            UserCommandMessage = DefaultUserCommandMessage;
         }
 
 

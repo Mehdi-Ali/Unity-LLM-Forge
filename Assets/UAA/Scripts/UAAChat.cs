@@ -67,7 +67,7 @@ namespace UAA
             UAAWindow.ChatHistory.Add(new Message { role = "system", content = UAAWindow.SystemMessage });
 
             if (String.IsNullOrEmpty(UAAWindow.UserChatMessage))
-                UAAWindow.UserChatMessage = UAAWindow.DefaultUserChatMessage;
+                UAAWindow.UserChatMessage = UAAWindow.UserChatMessage;
 
             UAAWindow.ChatHistory.Add(new Message { role = "user", content = UAAWindow.UserChatMessage });
             UAAWindow.UserChatMessage = "";

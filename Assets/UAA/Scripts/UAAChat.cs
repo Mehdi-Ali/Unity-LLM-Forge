@@ -100,7 +100,7 @@ namespace UAA
         private static async Task RenameChatHistory(string dateTime, string assetPath)
         {
 
-            UAAWindow.ChatHistory.Add(new Message { role = "user", content = UAAPrompts.TitlePrompt });
+            UAAWindow.ChatHistory.Add(new Message { role = "user", content = Settings.TitlePrompt });
             await UAAWindow.LLMChat();
 
             string chatHistoryName = CleanAssetName(UAAWindow.ChatHistory[UAAWindow.ChatHistory.Count - 1].content);

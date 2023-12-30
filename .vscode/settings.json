@@ -53,6 +53,7 @@
     },
     "dotnet.defaultSolution": "Unity-LLM-Forge.sln",
     "cSpell.words": [
+        "AIURL",
         "OPENAI"
     ]
 }

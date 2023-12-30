@@ -17,7 +17,7 @@ namespace UAA
 {
     public class UAAConnection
     {
-        private static string Url => UAAWindow.LocalLLM ? UAAWindow.LocalURL : UAAWindow.OpenAiURL;
+        private static string Url => UAAWindow.LocalLLM ? UAAWindow.LocalURL : UAAWindow.OpenAIURL;
         private static string OpenAI_API_Key => UAAWindow.OpenAI_API_Key;
         private static string OpenAI_API_model => UAAWindow.OpenAI_API_model;
 

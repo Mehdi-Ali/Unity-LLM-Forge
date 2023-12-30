@@ -6,14 +6,14 @@ using UnityEngine;
 
 namespace UAA
 {
-    [CreateAssetMenu(fileName = "UAASettings", menuName = "ScriptableObjects/UnityLMForge/UAASettings", order = 1)]
+    [CreateAssetMenu(fileName = "UAASettings", menuName = "ScriptableObjects/UAA/Settings", order = 1)]
     public class UAASettingsSO : ScriptableObject
     {
         [Header("LLM API Settings")]
         public string LocalURL = "http://localhost:1234/v1/chat/completions";
-        public string OpenAiURL = "https://api.openai.com/v1/chat/completions";
-        public string OpenAI_API_Key = "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";
-        public string OpenAI_API_model = "gpt-3.5-turbo";
+        public string OpenAIURL = "https://api.openai.com/v1/chat/completions";
+        public string OpenAI_API_Key = UAAProtectedEnv.OPENAI_API_KEY;
+        public string OpenAI_API_model = "gpt-4-1106-preview"; // ADD A DROP DOWN MENU FOR THIS
         public bool LocalLLM = true;
 
         [Header("LLM Parameters")]

@@ -31,10 +31,10 @@ namespace UAA
             set => Settings.LocalURL = value;
         }
 
-        public static string OpenAiURL
+        public static string OpenAIURL
         {
-            get => Settings.OpenAiURL;
-            set => Settings.OpenAiURL = value;
+            get => Settings.OpenAIURL;
+            set => Settings.OpenAIURL = value;
         }
 
         public static string OpenAI_API_Key
@@ -253,7 +253,7 @@ namespace UAA
             }
             else
             {
-                OpenAiURL = EditorGUILayout.TextField("Open AI URL", OpenAiURL);
+                OpenAIURL = EditorGUILayout.TextField("Open AI URL", OpenAIURL);
                 OpenAI_API_Key = EditorGUILayout.TextField("Open AI API KEY", OpenAI_API_Key);
                 OpenAI_API_model = EditorGUILayout.TextField("Open AI Used Model", OpenAI_API_model);
             }

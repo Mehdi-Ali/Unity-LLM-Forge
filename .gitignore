@@ -71,5 +71,5 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
-# Ignore the .env file
-# 
+# Ignore the Protected Env file
+/Assets/UAA/Scripts/UAAProtectedEnv.cs

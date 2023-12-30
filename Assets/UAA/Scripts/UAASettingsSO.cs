@@ -26,64 +26,66 @@ namespace UAA
         public bool SaveOnLoad = false;
         public bool CallOnAwake = false;
         public bool SaveOnClose = false;
+        public Color GUIBackgroundColor = new(0.2705882f, 0.3452933f, 0.3607843f, 1f);
 
         [Header("Paths")]
         public string ChatHistoryFolderPath = "Assets/UAA/ChatHistory";
+        public string TempFilePath = "Assets/UAA/Commands/UAAGeneratedScript_temp.cs";
 
         [Header("Runtime / cache")]
         public bool IsLLMAvailable = true;
         public CorrectingStates CorrectingState = CorrectingStates.NotFixing;
         public List<Message> CachedChatHistory = new List<Message>();
-        public LocalLLMInput CachedLLMInput;
+        public LocalLLMRequestInput CachedLLMInput;
 
 
-        [Header("Prompts")]
-        [SerializeField, TextArea(3, 10)] private string _defaultSystemMessage = UAAPrompts.DefaultSystemMessage;
+        [Header("Prompts")] //fix the naming!
+        [SerializeField, TextArea(3, 10)] private string _defaultSystemMessage = UAADefaultPrompts.DefaultSystemMessage;
         public string SystemMessage
         {
-            get { return string.IsNullOrEmpty(_defaultSystemMessage) ? UAAPrompts.DefaultSystemMessage : _defaultSystemMessage; }
+            get { return string.IsNullOrEmpty(_defaultSystemMessage) ? UAADefaultPrompts.DefaultSystemMessage : _defaultSystemMessage; }
             set { _defaultSystemMessage = value; }
         }
 
-        [SerializeField, TextArea(1, 3)] private string _defaultUserChatMessage = UAAPrompts.DefaultUserChatMessage;
-        public string DefaultUserChatMessage
+        [SerializeField, TextArea(1, 3)] private string _defaultUserChatMessage = UAADefaultPrompts.DefaultUserChatMessage;
+        public string UserChatMessage
         {
-            get { return string.IsNullOrEmpty(_defaultUserChatMessage) ? UAAPrompts.DefaultUserChatMessage : _defaultUserChatMessage; }
-            set { _defaultUserChatMessage = value; }
+            get => _defaultUserChatMessage;
+            set => _defaultUserChatMessage = value;
         }
 
-        [SerializeField, TextArea(1, 3)] private string _defaultUserCommandMessage = UAAPrompts.DefaultUserCommandMessage;
-        public string DefaultUserCommandMessage
+        [SerializeField, TextArea(1, 3)] private string _defaultUserCommandMessage = UAADefaultPrompts.DefaultUserCommandMessage;
+        public string UserCommandMessage
         {
-            get { return string.IsNullOrEmpty(_defaultUserCommandMessage) ? UAAPrompts.DefaultUserCommandMessage : _defaultUserCommandMessage; }
-            set { _defaultUserCommandMessage = value; }
+            get => _defaultUserCommandMessage;
+            set => _defaultUserCommandMessage = value;
         }
 
-        [SerializeField, TextArea(3, 10)] private string _titlePrompt = UAAPrompts.TitlePrompt;
+        [SerializeField, TextArea(3, 10)] private string _titlePrompt = UAADefaultPrompts.DefaultTitlePrompt;
         public string TitlePrompt
         {
-            get { return string.IsNullOrEmpty(_titlePrompt) ? UAAPrompts.TitlePrompt : _titlePrompt; }
-            set { _defaultUserCommandMessage = value; }
+            get { return string.IsNullOrEmpty(_titlePrompt) ? UAADefaultPrompts.DefaultTitlePrompt : _titlePrompt; }
+            set { _titlePrompt = value; }
         }
 
-        [SerializeField, TextArea(3, 10)] private string _simplifyCommandToTasksPrompt = UAAPrompts.SimplifyCommandToTasksPrompt;
+        [SerializeField, TextArea(3, 10)] private string _simplifyCommandToTasksPrompt = UAADefaultPrompts.DefaultSimplifyCommandToTasksPrompt;
         public string SimplifyCommandToTasksPrompt
         {
-            get { return string.IsNullOrEmpty(_simplifyCommandToTasksPrompt) ? UAAPrompts.SimplifyCommandToTasksPrompt : _simplifyCommandToTasksPrompt; }
+            get { return string.IsNullOrEmpty(_simplifyCommandToTasksPrompt) ? UAADefaultPrompts.DefaultSimplifyCommandToTasksPrompt : _simplifyCommandToTasksPrompt; }
             set { _simplifyCommandToTasksPrompt = value; }
         }
 
-        [SerializeField, TextArea(3, 10)] private string _taskToScriptPrompt = UAAPrompts.TaskToScriptPrompt;	
+        [SerializeField, TextArea(3, 10)] private string _taskToScriptPrompt = UAADefaultPrompts.DefaultTaskToScriptPrompt;	
         public string TaskToScriptPrompt
         {
-            get { return string.IsNullOrEmpty(_taskToScriptPrompt) ? UAAPrompts.TaskToScriptPrompt : _taskToScriptPrompt; }
+            get { return string.IsNullOrEmpty(_taskToScriptPrompt) ? UAADefaultPrompts.DefaultTaskToScriptPrompt : _taskToScriptPrompt; }
             set { _taskToScriptPrompt = value; }
         }
 
-        [SerializeField, TextArea(3, 3)] private string _correctScriptPrompt = UAAPrompts.CorrectScriptPrompt;
+        [SerializeField, TextArea(3, 3)] private string _correctScriptPrompt = UAADefaultPrompts.DefaultCorrectScriptPrompt;
         public string CorrectScriptPrompt
         {
-            get { return string.IsNullOrEmpty(_correctScriptPrompt) ? UAAPrompts.CorrectScriptPrompt : _correctScriptPrompt; }
+            get { return string.IsNullOrEmpty(_correctScriptPrompt) ? UAADefaultPrompts.DefaultCorrectScriptPrompt : _correctScriptPrompt; }
             set { _correctScriptPrompt = value; }
         }
     }

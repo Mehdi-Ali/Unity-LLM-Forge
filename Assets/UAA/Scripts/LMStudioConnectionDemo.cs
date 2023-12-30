@@ -23,7 +23,6 @@ namespace UAA
         [SerializeField, TextArea(3, 1000)] private string _userMessage;
 
 
-
         [Button]
         private void InitializeNewChat()
         {
@@ -32,7 +31,6 @@ namespace UAA
             _chatHistory.Add(new Message { role = "user", content = _userMessage });
             StartCoroutine(LLMChat());
         }
-
 
         [Button]
         public void SendMessage()
@@ -49,7 +47,7 @@ namespace UAA
             bool stream = _stream;
 
             var llm = UnityWebRequest.PostWwwForm(url, "POST");
-            string jsonMessage = JsonConvert.SerializeObject(new LocalLLMInput
+            string jsonMessage = JsonConvert.SerializeObject(new LocalLLMRequestInput
             {
                 messages = _chatHistory,
                 temperature = temperature,
@@ -67,7 +65,7 @@ namespace UAA
 
             if (llm.result == UnityWebRequest.Result.Success)
             {
-                var jsonResponse = JsonUtility.FromJson<Response>(llm.downloadHandler.text);
+                var jsonResponse = JsonUtility.FromJson<LocalLLMResponse>(llm.downloadHandler.text);
                 string messageContent = jsonResponse.choices[0].message.content;
                 _chatHistory.Add(new Message { role = "assistant", content = messageContent });
                 DisplayResponse(messageContent);

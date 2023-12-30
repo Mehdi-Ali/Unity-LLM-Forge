@@ -21,9 +21,10 @@ namespace UAA
         private static string OpenAI_API_Key => UAAWindow.OpenAI_API_Key;
         private static string OpenAI_API_model => UAAWindow.OpenAI_API_model;
 
-        public static LocalLLMInput CreateLLMInput(string systemPrompt, string userPrompt)
+
+        public static LocalLLMRequestInput CreateLLMInput(string systemPrompt, string userPrompt)
         {
-            return new LocalLLMInput
+            return new LocalLLMRequestInput
             {
                 messages = new List<Message>
             {
@@ -45,15 +46,14 @@ namespace UAA
             };
         }
 
-
-        public static async Task<string> SendAndReceiveNonStreamedMessages(LocalLLMInput llmInput)
+        public static async Task<string> SendAndReceiveNonStreamedMessages(LocalLLMRequestInput llmInput)
         {
             var post = UnityWebRequest.PostWwwForm(Url, "POST");
             string jsonMessage;
 
             if (!UAAWindow.LocalLLM)
             {
-                jsonMessage = JsonConvert.SerializeObject(new OpenAIRequest
+                jsonMessage = JsonConvert.SerializeObject(new OpenAIRequestInput
                 {
                     model = OpenAI_API_model,
                     messages = llmInput.messages
@@ -85,7 +85,7 @@ namespace UAA
 
             if (post.result == UnityWebRequest.Result.Success)
             {
-                var jsonResponse = JsonUtility.FromJson<Response>(post.downloadHandler.text);
+                var jsonResponse = JsonUtility.FromJson<LocalLLMResponse>(post.downloadHandler.text);
                 var messageContent = jsonResponse.choices[0].message.content;
 
                 return messageContent;
@@ -95,7 +95,7 @@ namespace UAA
                 return "Error: " + post.error;
         }
 
-        public static async Task SendAndReceiveStreamedMessages(LocalLLMInput llmInput, Action<string> callback)
+        public static async Task SendAndReceiveStreamedMessages(LocalLLMRequestInput llmInput, Action<string> callback)
         {
             HttpClient client = new HttpClient();
 
@@ -104,7 +104,7 @@ namespace UAA
 
             if (!UAAWindow.LocalLLM)
             {
-                jsonMessage = JsonConvert.SerializeObject(new OpenAIRequest
+                jsonMessage = JsonConvert.SerializeObject(new OpenAIRequestInput
                 {
                     model = OpenAI_API_model,
                     messages = llmInput.messages,
@@ -169,7 +169,7 @@ namespace UAA
                         chunk = PrepareJason(chunk);
                         try
                         {
-                            var jsonResponse = JsonUtility.FromJson<Response>(chunk);
+                            var jsonResponse = JsonUtility.FromJson<LocalLLMResponse>(chunk);
                             var delta = jsonResponse.choices[0].delta;
 
                             if (delta.IsEmpty())

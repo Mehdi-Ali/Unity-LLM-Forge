@@ -23,57 +23,175 @@ namespace UAA
     {
         public static UAASettingsSO Settings;
 
-        public static string LocalURL { get => Settings.LocalURL; set => Settings.LocalURL = value; }
-        public static string OpenAiURL { get => Settings.OpenAiURL; set => Settings.OpenAiURL = value; }
-        public static string OpenAI_API_Key { get => Settings.OpenAI_API_Key; set => Settings.OpenAI_API_Key = value; }
-        public static string OpenAI_API_model { get => Settings.OpenAI_API_model; set => Settings.OpenAI_API_model = value; }
-        public static bool LocalLLM { get => Settings.LocalLLM; set => Settings.LocalLLM = value; }
+        #region Logic Variables--------------------------------------------------------------------------------------------------------------------------------
 
-        public static float Temperature { get => Settings.Temperature; set => Settings.Temperature = value; }
-        public static int MaxTokens { get => Settings.MaxTokens; set => Settings.MaxTokens = value; }
-        public static bool Stream { get => Settings.Stream; set => Settings.Stream = value; }
+        public static string LocalURL
+        {
+            get => Settings.LocalURL;
+            set => Settings.LocalURL = value;
+        }
 
-        public static string SystemMessage { get => Settings.SystemMessage; set => Settings.SystemMessage = value; }
-        public static string UserChatMessage { get => Settings.DefaultUserChatMessage; set => Settings.DefaultUserChatMessage = value; }
-        private string UserCommandMessage { get => Settings.DefaultUserCommandMessage; set => Settings.DefaultUserCommandMessage = value; }
+        public static string OpenAiURL
+        {
+            get => Settings.OpenAiURL;
+            set => Settings.OpenAiURL = value;
+        }
 
-        public static bool IsLLMAvailable { get => Settings.IsLLMAvailable; set => Settings.IsLLMAvailable = value; }
+        public static string OpenAI_API_Key
+        {
+            get => Settings.OpenAI_API_Key;
+            set => Settings.OpenAI_API_Key = value;
+        }
 
-        public static List<Message> ChatHistory { get => Settings.CachedChatHistory; set => Settings.CachedChatHistory = value; }
+        public static string OpenAI_API_model
+        {
+            get => Settings.OpenAI_API_model;
+            set => Settings.OpenAI_API_model = value;
+        }
+
+        public static bool LocalLLM
+        {
+            get => Settings.LocalLLM;
+            set => Settings.LocalLLM = value;
+        }
+
+        public static float Temperature
+        {
+            get => Settings.Temperature;
+            set => Settings.Temperature = value;
+        }
+
+        public static int MaxTokens
+        {
+            get => Settings.MaxTokens;
+            set => Settings.MaxTokens = value;
+        }
+
+        public static bool Stream
+        {
+            get => Settings.Stream;
+            set => Settings.Stream = value;
+        }
+
+        public static string SystemMessage
+        {
+            get => Settings.SystemMessage;
+            set => Settings.SystemMessage = value;
+        }
+
+        public static string UserChatMessage
+        {
+            get => Settings.UserChatMessage;
+            set => Settings.UserChatMessage = value;
+        }
+
+        private string UserCommandMessage
+        {
+            get => Settings.UserCommandMessage;
+            set => Settings.UserCommandMessage = value;
+        }
+
+        public static bool IsLLMAvailable
+        {
+            get
+            {
+                if (Settings.IsLLMAvailable == false)
+                    Debug.Log("LLM is not available");
+
+                return Settings.IsLLMAvailable;
+            }
+
+            set => Settings.IsLLMAvailable = value;
+        }
+
+        public static List<Message> ChatHistory
+        {
+            get => Settings.CachedChatHistory;
+            set => Settings.CachedChatHistory = value;
+        }
 
         public static string GeneratedString = "";
-        public  static UAAChatHistorySO SavedChatHistory;
+        public static UAAChatHistorySO SavedChatHistory;
+
+        public static string TitlePrompt
+        {
+            get => Settings.TitlePrompt;
+            set => Settings.TitlePrompt = value;
+        }
+
+        public static string SimplifyCommandToTasksPrompt
+        {
+            get => Settings.SimplifyCommandToTasksPrompt;
+            set => Settings.SimplifyCommandToTasksPrompt = value;
+        }
+
+        public static string TaskToScriptPrompt
+        {
+            get => Settings.TaskToScriptPrompt;
+            set => Settings.TaskToScriptPrompt = value;
+        }
+
+        public static string CorrectScriptPrompt
+        {
+            get => Settings.CorrectScriptPrompt;
+            set => Settings.CorrectScriptPrompt = value;
+        }
+
+        #endregion Logic Variables ----------------------------------------------------------------------------------------------------------------------------
 
         #region FrontEnd --------------------------------------------------------------------------------------------------------------------------------
-        public static bool SaveOnNewChat { get => Settings.SaveOnNewChat; set => Settings.SaveOnNewChat = value; }
-        public static bool SaveOnLoad { get => Settings.SaveOnLoad; set => Settings.SaveOnLoad = value; }
 
-        bool _callOnAwake { get => Settings.CallOnAwake; set => Settings.CallOnAwake = value; }
-        bool _saveOnClose { get => Settings.SaveOnClose; set => Settings.SaveOnClose = value; }
+        public static bool SaveOnNewChat
+        {
+            get => Settings.SaveOnNewChat;
+            set => Settings.SaveOnNewChat = value;
+        }
+
+        public static bool SaveOnLoad
+        {
+            get => Settings.SaveOnLoad;
+            set => Settings.SaveOnLoad = value;
+        }
+
+        bool _callOnAwake
+        {
+            get => Settings.CallOnAwake;
+            set => Settings.CallOnAwake = value;
+        }
+
+        bool _saveOnClose
+        {
+            get => Settings.SaveOnClose;
+            set => Settings.SaveOnClose = value;
+        }
 
         private static bool _onEnter;
 
         public static string[] SavedChatHistoryPaths;
 
+        private static Vector2 _scrollPositionGeneral;
         private static Vector2 _scrollPositionSystemMessage;
         private static Vector2 _scrollPositionUserChatMessage;
         private static Vector2 _scrollPositionUserCommandMessage;
         private static Vector2 _scrollPositionChatHistory;
         private static Vector2 _scrollPositionGeneratedScript;
-
+        private static Vector2 _scrollPositionTitlePrompt;
+        private static Vector2 _scrollPositionSimplifyCommandToTasksPrompt;
+        private static Vector2 _scrollPositionTaskToScriptPrompt;
+        private static Vector2 _scrollPositionCorrectScriptPrompt;
         private static float totalHeight;
 
         GUIStyle _roleStyle;
         GUIStyle _messageStyle;
 
         private int _selectedTab = 0;
+        private Color _backgroundColor;
         private Color ChatHistoryColor;
 
         public static int selectedChatHistoryIndex;
-       
 
         [MenuItem("Window/UAA - Unity AI Assistant")]
-        public static void ShowWindow()
+        private static void ShowWindow()
         {
             GetWindow<UAAWindow>("UAA");
         }
@@ -81,24 +199,31 @@ namespace UAA
         private void OnGUI()
         {
             InitializeStyles();
-            GUI.backgroundColor = Color.gray;
+            GUI.backgroundColor = _backgroundColor;
             _onEnter = (Event.current.type == EventType.KeyUp && Event.current.keyCode == KeyCode.Return && !Event.current.shift);
 
             string[] tabs = { "UAA Profile", "UAA Chat", "UAA Command" };
             _selectedTab = GUILayout.Toolbar(_selectedTab, tabs);
 
-            switch (_selectedTab)
+            GUILayout.BeginHorizontal();
             {
-                case 0:
-                    ProfileTab();
-                    break;
-                case 1:
-                    ChatTab();
-                    break;
-                case 2:
-                    CommandTab();
-                    break;
+                GUILayout.Space(15);
+                _scrollPositionGeneral = EditorGUILayout.BeginScrollView(_scrollPositionGeneral, GUILayout.Height(this.position.height - 30));
+                switch (_selectedTab)
+                {
+                    case 0:
+                        ProfileTab();
+                        break;
+                    case 1:
+                        ChatTab();
+                        break;
+                    case 2:
+                        CommandTab();
+                        break;
+                }
+                EditorGUILayout.EndScrollView();
             }
+            GUILayout.EndHorizontal();
         }
 
         private void InitializeStyles()
@@ -134,8 +259,28 @@ namespace UAA
             }
 
             EditorGUILayout.LabelField("Profile Description");
-            _scrollPositionSystemMessage = EditorGUILayout.BeginScrollView(_scrollPositionSystemMessage, GUILayout.Height(300));
+            _scrollPositionSystemMessage = EditorGUILayout.BeginScrollView(_scrollPositionSystemMessage, GUILayout.Height(200));
             SystemMessage = GUILayout.TextArea(SystemMessage, GUILayout.ExpandHeight(true));
+            EditorGUILayout.EndScrollView();
+
+            EditorGUILayout.LabelField("Chat-History Naming Task");
+            _scrollPositionTitlePrompt = EditorGUILayout.BeginScrollView(_scrollPositionTitlePrompt, GUILayout.Height(75));
+            TitlePrompt = GUILayout.TextArea(TitlePrompt, GUILayout.ExpandHeight(true));
+            EditorGUILayout.EndScrollView();
+
+            EditorGUILayout.LabelField("Command simplification Task");
+            _scrollPositionSimplifyCommandToTasksPrompt = EditorGUILayout.BeginScrollView(_scrollPositionSimplifyCommandToTasksPrompt, GUILayout.Height(200));
+            SimplifyCommandToTasksPrompt = GUILayout.TextArea(SimplifyCommandToTasksPrompt, GUILayout.ExpandHeight(true));
+            EditorGUILayout.EndScrollView();
+
+            EditorGUILayout.LabelField("Code Generation Task");
+            _scrollPositionTaskToScriptPrompt = EditorGUILayout.BeginScrollView(_scrollPositionTaskToScriptPrompt, GUILayout.Height(400));
+            TaskToScriptPrompt = GUILayout.TextArea(TaskToScriptPrompt, GUILayout.ExpandHeight(true));
+            EditorGUILayout.EndScrollView();
+
+            EditorGUILayout.LabelField("Scripting Debugging Task");
+            _scrollPositionCorrectScriptPrompt = EditorGUILayout.BeginScrollView(_scrollPositionCorrectScriptPrompt, GUILayout.Height(75));
+            CorrectScriptPrompt = GUILayout.TextArea(CorrectScriptPrompt, GUILayout.ExpandHeight(true));
             EditorGUILayout.EndScrollView();
         }
 
@@ -273,13 +418,14 @@ namespace UAA
                 LogMessages(UAACommand.LLMInput.messages);
         }
 
-        public void OnInspectorUpdate()
+        private void OnInspectorUpdate()
         {
             Repaint();
         }
+
         #endregion --------------------------------------------------------------------------------------------------------------------------------
 
-        void OnEnable()
+        private void OnEnable()
         {
             Settings = AssetDatabase.LoadAssetAtPath<UAASettingsSO>("Assets/UAA/Settings/UAASettings.asset");
 
@@ -289,33 +435,24 @@ namespace UAA
                 AssetDatabase.CreateAsset(Settings, "Assets/UAA/Settings/UAASettings.asset");
             }
 
+            _backgroundColor = Settings.GUIBackgroundColor;
             ChatHistoryColor = new(0.1f, 0.1f, 0.1f);
+
+            if (string.IsNullOrEmpty(UserChatMessage))
+                UserChatMessage = UAADefaultPrompts.DefaultUserChatMessage;
+            if (string.IsNullOrEmpty(UserCommandMessage))
+                UserCommandMessage = UAADefaultPrompts.DefaultUserCommandMessage;
 
             UAAChat.RefreshChatHistory();
             if (_callOnAwake)
                 _ = UAAChat.InitializeNewChat();
         }
 
-
-
-        public void SendMessage()
-        {
-            if (IsLLMAvailable == false)
-            {
-                Debug.Log("LLM is not available");
-                return;
-            }
-
-            ChatHistory.Add(new Message { role = "user", content = UserChatMessage });
-            UserChatMessage = "";
-            _ = LLMChat();
-        }
-
         public static async Task LLMChat()
         {
             IsLLMAvailable = false;
 
-            var llmInput = new LocalLLMInput
+            var llmInput = new LocalLLMRequestInput
             {
                 messages = ChatHistory,
                 temperature = Temperature,
@@ -349,18 +486,25 @@ namespace UAA
             IsLLMAvailable = true;
         }
 
-        public void SendCommand()
+        private void SendMessage()
         {
             if (IsLLMAvailable == false)
-            {
-                Debug.Log("LLM is not available");
                 return;
-            }
+
+            ChatHistory.Add(new Message { role = "user", content = UserChatMessage });
+            UserChatMessage = "";
+            _ = LLMChat();
+        }
+
+        private void SendCommand()
+        {
+            if (IsLLMAvailable == false)
+                return;
 
             UAACommand.InitializeCommand(UserCommandMessage);
         }
 
-        public void StopGenerating()
+        private void StopGenerating()
         {
             IsLLMAvailable = true;
             UAAConnection.StopGenerating();
@@ -378,3 +522,4 @@ namespace UAA
 
 
 
+    

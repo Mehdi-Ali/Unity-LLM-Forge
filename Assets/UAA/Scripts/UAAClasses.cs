@@ -7,17 +7,57 @@ using UnityEngine;
 namespace UAA
 {
     [Serializable]
-    public class Response
+    public class LocalLLMRequestInput
     {
-        public string id;
-        public List<Choice> choices;
+        public List<Message> messages;
+        public double temperature;
+        public int max_tokens;
+        public bool stream;
     }
 
     [Serializable]
-    public class Choice
+    public struct OpenAIRequestInput
     {
-        public Delta delta;
+        public string model;
+        public List<Message> messages;
+        public bool stream;
+    }
+
+    [Serializable]
+    public class Message
+    {
+        public string role;
+        [TextArea(3, 1000)] public string content;
+    }
+
+    [Serializable]
+    public enum Role
+    {
+        system,
+        user,
+        assistant
+    }
+
+    [Serializable]
+    public class LocalLLMResponse
+    {
+        public string id;
+        public List<LocalLLMChoice> choices;
+    }
+
+    [Serializable]
+    public class LocalLLMChoice
+    {
+        public LocalLLMDelta delta;
         public Message message;
+    }
+
+    [Serializable]
+    public class LocalLLMDelta
+    {
+        public string role;
+        public string content;
+        public bool IsEmpty() => string.IsNullOrEmpty(role);
     }
 
     [Serializable]
@@ -39,46 +79,6 @@ namespace UAA
     {
         public string content;
         public bool IsEmpty() => string.IsNullOrEmpty(content);
-    }
-
-    [Serializable]
-    public class LocalLLMInput
-    {
-        public List<Message> messages;
-        public double temperature;
-        public int max_tokens;
-        public bool stream;
-    }
-
-    [Serializable]
-    public struct OpenAIRequest
-    {
-        public string model;
-        public List<Message> messages;
-        public bool stream;
-    }
-
-    [Serializable]
-    public class Message
-    {
-        public string role;
-        [TextArea(3, 1000)] public string content;
-    }
-
-    [Serializable]
-    public class Delta
-    {
-        public string role;
-        public string content;
-        public bool IsEmpty() => string.IsNullOrEmpty(role);
-    }
-
-    [Serializable]
-    public enum Role
-    {
-        system,
-        user,
-        assistant
     }
 }
 

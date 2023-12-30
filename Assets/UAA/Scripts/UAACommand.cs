@@ -16,18 +16,24 @@ namespace UAA
     {
         public static UAASettingsSO Settings;
 
-        static private List<string> _tasks = new List<string>();
-        private const string TempFilePath = "Assets/UAA/Commands/UAAGeneratedScript_temp.cs";
+        private static List<string> _tasks = new List<string>();
+        private static string TempFilePath => Settings.TempFilePath;
+        private static bool TempFileExists => System.IO.File.Exists(TempFilePath);
+        private static string script = "";
+        private static readonly string _simplifyCommandToTasksPrompt = UAADefaultPrompts.DefaultSimplifyCommandToTasksPrompt;
+        private static readonly StringBuilder _errorContent = new StringBuilder();
 
-        static bool TempFileExists => System.IO.File.Exists(TempFilePath);
-        static string script = "";
+        public static LocalLLMRequestInput LLMInput
+        {
+            get => UAAWindow.Settings.CachedLLMInput;
+            set => UAAWindow.Settings.CachedLLMInput = value;
+        }
 
-        static private string _simplifyCommandToTasksPrompt = UAAPrompts.SimplifyCommandToTasksPrompt;
-
-        public static LocalLLMInput LLMInput { get => UAAWindow.Settings.CachedLLMInput; set => UAAWindow.Settings.CachedLLMInput = value; }
-        public static CorrectingStates CorrectingState { get => Settings.CorrectingState; set => Settings.CorrectingState = value; }
-
-        private static StringBuilder _errorContent = new StringBuilder();
+        public static CorrectingStates CorrectingState
+        {
+            get => Settings.CorrectingState;
+            set => Settings.CorrectingState = value;
+        }
 
 
         static UAACommand()
@@ -86,7 +92,7 @@ namespace UAA
         {
             commandPrompt = _simplifyCommandToTasksPrompt + commandPrompt;
 
-            LLMInput = UAAConnection.CreateLLMInput(UAAPrompts.SimplifyCommandToTasksPrompt, commandPrompt);
+            LLMInput = UAAConnection.CreateLLMInput(UAADefaultPrompts.DefaultSimplifyCommandToTasksPrompt, commandPrompt);
             string tasks = "";
             await UAAConnection.SendAndReceiveStreamedMessages(LLMInput, (response) =>
             {
@@ -113,7 +119,7 @@ namespace UAA
 
         private static async void HandleTask(string task)
         {
-            LLMInput = UAAConnection.CreateLLMInput(UAAPrompts.TaskToScriptPrompt, "The task is described as follows:\n" + task);
+            LLMInput = UAAConnection.CreateLLMInput(UAADefaultPrompts.DefaultTaskToScriptPrompt, "The task is described as follows:\n" + task);
             await CreateScript();
         }
 
@@ -166,7 +172,6 @@ namespace UAA
             AssetDatabase.DeleteAsset(TempFilePath);
         }
 
-        //[InitializeOnLoadMethod]
         private static async void CheckForIDEErrors()
         {
             Debug.Log("Check For IDE Errors");
@@ -178,6 +183,7 @@ namespace UAA
                 ExecuteScript();
             }
         }
+
         private static async void CheckForRuntimeErrors()
         {
             Debug.Log("Check For Runtime Errors");
@@ -188,7 +194,6 @@ namespace UAA
                 CorrectingState = CorrectingStates.NotFixing;
             }
         }
-
 
         public static async Task CorrectScript()
         {
@@ -204,7 +209,7 @@ namespace UAA
                 role = Role.user.ToString(),
                 content = "Here's Unity's Console Error Logs :\n" +
                             _errorContent.ToString() +
-                            UAAPrompts.CorrectScriptPrompt
+                            UAADefaultPrompts.DefaultCorrectScriptPrompt
             });
 
             _errorContent.Clear();

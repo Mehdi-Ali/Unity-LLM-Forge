@@ -27,6 +27,7 @@ MonoBehaviour:
   GUIBackgroundColor: {r: 0.2705882, g: 0.3452933, b: 0.3607843, a: 1}
   ChatHistoryFolderPath: Assets/UAA/ChatHistory
   TempFilePath: Assets/UAA/Commands/UAAGeneratedScript_temp.cs
+  SettingsPath: Assets/UAA/Settings/UAASettings.asset
   IsLLMAvailable: 1
   CorrectingState: 0
   CachedChatHistory: []

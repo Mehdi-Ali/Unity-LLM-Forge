@@ -31,6 +31,7 @@ namespace UAA
         [Header("Paths")]
         public string ChatHistoryFolderPath = "Assets/UAA/ChatHistory";
         public string TempFilePath = "Assets/UAA/Commands/UAAGeneratedScript_temp.cs";
+        public string SettingsPath = "Assets/UAA/Settings/UAASettings.asset";
 
         [Header("Runtime / cache")]
         public bool IsLLMAvailable = true;

@@ -6,6 +6,6 @@ namespace UAA
 {
     public static class UAAProtectedEnv
     {
-        public static string OPENAI_API_KEY = "sk-rx...";
+        public static string OPENAI_API_KEY = "sk-r...";
     }
 }

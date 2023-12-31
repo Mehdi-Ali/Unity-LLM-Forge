@@ -9,15 +9,24 @@ namespace UAA
 {
     public class UAAChat
     {
-        public static UAASettingsSO Settings;
-
-        public static string ChatHistoryFolderPath { get => Settings.ChatHistoryFolderPath; set => Settings.ChatHistoryFolderPath = value; }
-
-        static UAAChat()
+        private static UAASettingsSO _settings;
+        private static UAASettingsSO Settings
         {
-            if (Settings == null)
-                Settings = AssetDatabase.LoadAssetAtPath<UAASettingsSO>("Assets/UAA/Settings/UAASettings.asset");
+            get
+            {
+                if (_settings == null)
+                    _settings = AssetDatabase.LoadAssetAtPath<UAASettingsSO>("Assets/UAA/Settings/UAASettings.asset");
+
+                return _settings;
+            }
         }
+
+        private static string ChatHistoryFolderPath
+        {
+            get => Settings.ChatHistoryFolderPath;
+            set => Settings.ChatHistoryFolderPath = value;
+        }
+
 
         public static void RefreshChatHistory()
         {
@@ -51,7 +60,7 @@ namespace UAA
             UAAWindow.ChatHistory = new List<Message>(UAAWindow.SavedChatHistory.ChatHistory);
         }
 
-        public static async Task InitializeNewChat()
+        public static async Task InitializeNewChat(bool SendDefaultMessage = true)
         {
             UAAWindow.selectedChatHistoryIndex = -1;
 
@@ -65,15 +74,16 @@ namespace UAA
 
             UAAWindow.ChatHistory.Clear();
             UAAWindow.ChatHistory.Add(new Message { role = "system", content = UAAWindow.SystemMessage });
+            
+            if (!SendDefaultMessage)
+                return;
 
-            if (String.IsNullOrEmpty(UAAWindow.UserChatMessage))
-                UAAWindow.UserChatMessage = UAAWindow.UserChatMessage;
+            if (string.IsNullOrEmpty(UAAWindow.UserChatMessage))
+                UAAWindow.UserChatMessage = UAADefaultPrompts.DefaultUserChatMessage;
 
             UAAWindow.ChatHistory.Add(new Message { role = "user", content = UAAWindow.UserChatMessage });
             UAAWindow.UserChatMessage = "";
             _ = UAAWindow.LLMChat();
-
-            await Task.Delay(1);
         }
 
         public static void SaveChatHistory(List<Message> messages, bool setIndex = true)

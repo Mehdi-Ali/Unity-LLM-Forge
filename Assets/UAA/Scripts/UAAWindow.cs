@@ -21,7 +21,24 @@ namespace UAA
 {
     public class UAAWindow : EditorWindow
     {
-        public static UAASettingsSO Settings;
+        private static UAASettingsSO _settings;
+        private static UAASettingsSO Settings
+        {
+            get
+            {
+                var settingsPath = "Assets/UAA/Settings/UAASettings.asset";
+                if (_settings == null)
+                    _settings = AssetDatabase.LoadAssetAtPath<UAASettingsSO>(settingsPath);
+
+                if (_settings == null)
+                {
+                    _settings = CreateInstance<UAASettingsSO>();
+                    AssetDatabase.CreateAsset(_settings, settingsPath);
+                }
+
+                return _settings;
+            }
+        }
 
         #region Logic Variables--------------------------------------------------------------------------------------------------------------------------------
 
@@ -48,14 +65,6 @@ namespace UAA
             get => Settings.OpenAI_API_model;
             set => Settings.OpenAI_API_model = value;
         }
-
-        public static OpenAIModels SelectedOpenAIModel;
-        private readonly Dictionary<OpenAIModels, string> _modelToString = new()
-        {
-            { OpenAIModels.GPT_4_Turbo, "gpt-4-1106-preview" },
-            { OpenAIModels.GPT_4, "gpt-4" },
-            { OpenAIModels.GPT_3_5_Turbo, "gpt-3.5-turbo-1106" },
-        };
 
         public static bool LocalLLM
         {
@@ -161,18 +170,26 @@ namespace UAA
             set => Settings.SaveOnLoad = value;
         }
 
-        bool _callOnAwake
+        private bool CallOnAwake
         {
             get => Settings.CallOnAwake;
             set => Settings.CallOnAwake = value;
         }
 
-        bool _saveOnClose
+        private bool SaveOnClose
         {
             get => Settings.SaveOnClose;
             set => Settings.SaveOnClose = value;
         }
 
+        public static OpenAIModels SelectedOpenAIModel;
+        private readonly Dictionary<OpenAIModels, string> _modelToString = new()
+        {
+            { OpenAIModels.GPT_4_Turbo, "gpt-4-1106-preview" },
+            { OpenAIModels.GPT_4, "gpt-4" },
+            { OpenAIModels.GPT_3_5_Turbo, "gpt-3.5-turbo-1106" },
+        };
+        
         private static bool _onEnter;
 
         public static string[] SavedChatHistoryPaths;
@@ -437,24 +454,16 @@ namespace UAA
 
         private void OnEnable()
         {
-            Settings = AssetDatabase.LoadAssetAtPath<UAASettingsSO>("Assets/UAA/Settings/UAASettings.asset");
-
-            if (Settings == null)
-            {
-                Settings = CreateInstance<UAASettingsSO>();
-                AssetDatabase.CreateAsset(Settings, "Assets/UAA/Settings/UAASettings.asset");
-            }
-
             _backgroundColor = Settings.GUIBackgroundColor;
             ChatHistoryColor = new(0.1f, 0.1f, 0.1f);
 
             if (string.IsNullOrEmpty(UserChatMessage))
-                UserChatMessage = UAADefaultPrompts.DefaultUserChatMessage;
+                UserChatMessage = UserChatMessage;
             if (string.IsNullOrEmpty(UserCommandMessage))
-                UserCommandMessage = UAADefaultPrompts.DefaultUserCommandMessage;
+                UserCommandMessage = UserCommandMessage;
 
             UAAChat.RefreshChatHistory();
-            if (_callOnAwake)
+            if (CallOnAwake)
                 _ = UAAChat.InitializeNewChat();
         }
 
@@ -496,10 +505,16 @@ namespace UAA
             IsLLMAvailable = true;
         }
 
-        private void SendMessage()
+        private async void SendMessage()
         {
             if (IsLLMAvailable == false)
                 return;
+
+            if (ChatHistory.Count == 0)
+                await UAAChat.InitializeNewChat(false);
+
+            if (string.IsNullOrEmpty(UserChatMessage))
+                UserChatMessage = UAADefaultPrompts.DefaultUserChatMessage;
 
             ChatHistory.Add(new Message { role = "user", content = UserChatMessage });
             UserChatMessage = "";
@@ -526,6 +541,14 @@ namespace UAA
             {
                 Debug.Log(message.role + ": " + message.content);
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (SaveOnClose)
+                UAAChat.SaveChatHistory(ChatHistory);
+
+            UAACommand.UnsubscribeFromEvents();
         }
     }
 }

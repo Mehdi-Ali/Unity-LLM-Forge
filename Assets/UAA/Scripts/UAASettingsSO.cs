@@ -13,7 +13,7 @@ namespace UAA
         public string LocalURL = "http://localhost:1234/v1/chat/completions";
         public string OpenAIURL = "https://api.openai.com/v1/chat/completions";
         public string OpenAI_API_Key = UAAProtectedEnv.OPENAI_API_KEY;
-        public string OpenAI_API_model = "gpt-4-1106-preview"; // ADD A DROP DOWN MENU FOR THIS
+        public string OpenAI_API_model = "gpt-4-1106-preview";
         public bool LocalLLM = true;
 
         [Header("LLM Parameters")]
@@ -39,8 +39,7 @@ namespace UAA
         public List<Message> CachedChatHistory = new List<Message>();
         public LocalLLMRequestInput CachedLLMInput;
 
-
-        [Header("Prompts")] //fix the naming!
+        [Header("Prompts")]
         [SerializeField, TextArea(3, 10)] private string _defaultSystemMessage = UAADefaultPrompts.DefaultSystemMessage;
         public string SystemMessage
         {

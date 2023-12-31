@@ -68,26 +68,19 @@ namespace UAA
             byte[] bytesMessage = Encoding.UTF8.GetBytes(jsonMessage);
             post.uploadHandler = new UploadHandlerRaw(bytesMessage);
             post.SetRequestHeader("Content-Type", "application/json");
-
-
-            // TODO I am not so sure about the tcs thing but it seems to work for now I need to check if i can remove it later on?
-
-            var tcs = new TaskCompletionSource<bool>();
             post.SendWebRequest();
+
             while (!post.isDone)
             {
                 await Task.Delay(10);
             }
-            tcs.SetResult(true);
-
-            await tcs.Task;
 
             if (post.result == UnityWebRequest.Result.Success)
             {
                 var jsonResponse = JsonUtility.FromJson<LocalLLMResponse>(post.downloadHandler.text);
                 var messageContent = jsonResponse.choices[0].message.content;
 
-                return messageContent;
+                return messageContent.Trim();
             }
 
             else
@@ -96,9 +89,9 @@ namespace UAA
 
         public static async Task SendAndReceiveStreamedMessages(LocalLLMRequestInput llmInput, Action<string> callback)
         {
-            HttpClient client = new HttpClient();
+            HttpClient client = new();
 
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, Url);
+            HttpRequestMessage request = new(HttpMethod.Post, Url);
             string jsonMessage = "";
 
             if (!UAAWindow.LocalLLM)
@@ -218,7 +211,7 @@ namespace UAA
         internal static void StopGenerating()
         {
             // Couldn't find any documentation on how to do it, need to check later on
-
+            Debug.Log("StopGenerating is not implemented yet");
         }
     }
 }

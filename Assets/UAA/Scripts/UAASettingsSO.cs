@@ -98,4 +98,12 @@ namespace UAA
         FixingIDErrors,
         FixingRuntimeErrors
     }
+
+    [Serializable]
+    public enum OpenAIModels
+    {
+        GPT_4_Turbo,
+        GPT_4,
+        GPT_3_5_Turbo,
+    }
 }

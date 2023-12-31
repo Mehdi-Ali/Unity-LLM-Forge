@@ -49,6 +49,14 @@ namespace UAA
             set => Settings.OpenAI_API_model = value;
         }
 
+        public static OpenAIModels SelectedOpenAIModel;
+        private readonly Dictionary<OpenAIModels, string> _modelToString = new()
+        {
+            { OpenAIModels.GPT_4_Turbo, "gpt-4-1106-preview" },
+            { OpenAIModels.GPT_4, "gpt-4" },
+            { OpenAIModels.GPT_3_5_Turbo, "gpt-3.5-turbo-1106" },
+        };
+
         public static bool LocalLLM
         {
             get => Settings.LocalLLM;
@@ -255,7 +263,9 @@ namespace UAA
             {
                 OpenAIURL = EditorGUILayout.TextField("Open AI URL", OpenAIURL);
                 OpenAI_API_Key = EditorGUILayout.TextField("Open AI API KEY", OpenAI_API_Key);
-                OpenAI_API_model = EditorGUILayout.TextField("Open AI Used Model", OpenAI_API_model);
+                SelectedOpenAIModel = (OpenAIModels)EditorGUILayout.EnumPopup("Open AI Model", SelectedOpenAIModel, GUILayout.ExpandWidth(true));
+                OpenAI_API_model = _modelToString[SelectedOpenAIModel];
+
             }
 
             EditorGUILayout.LabelField("Profile Description");
@@ -522,4 +532,3 @@ namespace UAA
 
 
 
-    

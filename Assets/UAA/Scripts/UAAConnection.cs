@@ -21,7 +21,6 @@ namespace UAA
         private static string OpenAI_API_Key => UAAWindow.OpenAI_API_Key;
         private static string OpenAI_API_model => UAAWindow.OpenAI_API_model;
 
-
         public static LocalLLMRequestInput CreateLLMInput(string systemPrompt, string userPrompt)
         {
             return new LocalLLMRequestInput

@@ -102,7 +102,7 @@ namespace UAA
             set => Settings.UserChatMessage = value;
         }
 
-        private string UserCommandMessage
+        public static string UserCommandMessage
         {
             get => Settings.UserCommandMessage;
             set => Settings.UserCommandMessage = value;
@@ -318,7 +318,7 @@ namespace UAA
             {
                 _ = UAAChat.InitializeNewChat();
             }
-            SaveOnNewChat = EditorGUILayout.Toggle("Save current chat OnNew Chat", SaveOnNewChat);
+            // SaveOnNewChat = EditorGUILayout.Toggle("Save current chat OnNew Chat", SaveOnNewChat);
 
             if (GUILayout.Button("Save Chat History"))
             {
@@ -336,12 +336,12 @@ namespace UAA
                     SavedChatHistory = AssetDatabase.LoadAssetAtPath<UAAChatHistorySO>(SavedChatHistoryPaths[selectedChatHistoryIndex]);
             }
 
-            SaveOnLoad = EditorGUILayout.Toggle("Save current chat OnLoad ", SaveOnLoad);
+            // SaveOnLoad = EditorGUILayout.Toggle("Save current chat OnLoad ", SaveOnLoad);
 
-            if (GUILayout.Button("Refresh Chat History List"))
-            {
-                UAAChat.RefreshChatHistory();
-            }
+            // if (GUILayout.Button("Refresh Chat History List"))
+            // {
+            //     UAAChat.RefreshChatHistory();
+            // }
 
             if (GUILayout.Button("Load Chat History"))
             {
@@ -349,7 +349,7 @@ namespace UAA
             }
 
             EditorGUILayout.LabelField("Chat History", EditorStyles.boldLabel);
-            _scrollPositionChatHistory = EditorGUILayout.BeginScrollView(_scrollPositionChatHistory, GUILayout.Height(500));
+            _scrollPositionChatHistory = EditorGUILayout.BeginScrollView(_scrollPositionChatHistory, GUILayout.Height(640));
 
             totalHeight = -475f;
 

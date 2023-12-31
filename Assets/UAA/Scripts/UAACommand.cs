@@ -99,6 +99,9 @@ namespace UAA
 
         public static async void InitializeCommand(string prompt)
         {
+            if (string.IsNullOrEmpty(UAAWindow.UserCommandMessage))
+                UAAWindow.UserCommandMessage = UAADefaultPrompts.DefaultUserCommandMessage;
+
             //_tasks = await SimplifyCommand(prompt);
             // to simplify things let's not separate the tasks for now
 

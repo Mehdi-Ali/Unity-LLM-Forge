@@ -52,7 +52,7 @@ namespace UAA
                                 "\n```\n";
 
 
-        public static string DefaultCorrectScriptPrompt = "\nPlease correct the script and send it again." +
+        public static string DefaultCorrectScriptPrompt = "Please correct the script and send it again." +
                                                     "\nAnd please don't forget to include the code between ```csharp and ```.";
     }
 }

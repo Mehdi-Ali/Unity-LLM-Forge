@@ -37,7 +37,7 @@ namespace UAA
             get => Settings.SimplifyCommandToTasksPrompt;
             set => Settings.SimplifyCommandToTasksPrompt = value;
         }
-        
+
         private static string TaskToScriptPrompt
         {
             get => Settings.TaskToScriptPrompt;
@@ -73,6 +73,8 @@ namespace UAA
 
         private static readonly List<string> _tasks = new();
         private static string script = "";
+        private static string _cachedCommand;
+
 
 
         static UAACommand()
@@ -85,9 +87,10 @@ namespace UAA
         {
             if (type == LogType.Error || type == LogType.Exception)
             {
-                ErrorLogs += logString;
+                ErrorLogs += " * " + logString + "\n" + stackTrace + "\n\n";
             }
         }
+
 
         [InitializeOnLoadMethod]
         public static async void Resume()
@@ -109,10 +112,11 @@ namespace UAA
 
         public static async void InitializeCommand(string prompt)
         {
-            if (string.IsNullOrEmpty(UAAWindow.UserCommandMessage))
-                UAAWindow.UserCommandMessage = UAADefaultPrompts.DefaultUserCommandMessage;
+            if (string.IsNullOrEmpty(prompt))
+                prompt = UAAWindow.UserCommandMessage = _cachedCommand = UAADefaultPrompts.DefaultUserCommandMessage;
 
             ErrorLogs = null;
+
             //_tasks = await SimplifyCommand(prompt);
             // to simplify things let's not separate the tasks for now
 
@@ -155,11 +159,22 @@ namespace UAA
 
         private static async Task CreateScript(bool isUpdatingScript = false)
         {
+            // LLMInput.messages.Add(new Message
+            // {
+            //     role = Role.assistant.ToString(),
+            //     content = "```csharp\n" 
+            // });
+
+            // var firstTokenReceived = false;
             await UAAConnection.SendAndReceiveStreamedMessages(LLMInput, (generatedScript) =>
             {
+                // if (!firstTokenReceived)
+                // {
+                //     firstTokenReceived = true;
+                //     LLMInput.messages.RemoveAt(LLMInput.messages.Count - 1);
+                // }
                 UAAWindow.GeneratedString = generatedScript;
             });
-
             UAAWindow.GeneratedString = GetOnlyScript(UAAWindow.GeneratedString);
             script = UAAWindow.GeneratedString;
 
@@ -188,9 +203,19 @@ namespace UAA
                 AssetDatabase.DeleteAsset(TempFilePath);
 
             IsCorrectingScript = false;
+
+            if (TempFileExists)
+            {
+                Debug.Log("*******************");
+                var previousCode = System.IO.File.ReadAllText(TempFilePath);
+                if (previousCode == code)
+                    InitializeCommand(_cachedCommand);
+            }
+
             var flags = BindingFlags.Static | BindingFlags.NonPublic;
             var method = typeof(ProjectWindowUtil).GetMethod("CreateScriptAssetWithContent", flags);
             method.Invoke(null, new object[] { TempFilePath, code });
+            Resume();
         }
 
         public static void ExecuteScript()
@@ -237,14 +262,13 @@ namespace UAA
                 return;
 
             IsCorrectingScript = true;
-            
 
             LLMInput.messages.Add(new Message
             {
                 role = Role.user.ToString(),
-                content = "Here's Unity's Console Error Logs :\n" +
-                            ErrorLogs +
-                            CorrectScriptPrompt
+                content = CorrectScriptPrompt + "\n" +
+                        "Here's Unity's Console Error Logs :\n" +
+                        ErrorLogs
             });
 
             ErrorLogs = null;

@@ -1,23 +1,16 @@
 using UnityEngine;
 using UnityEditor;
 
-public class UAAGeneratedScript : EditorWindow
+public class UAAScript : EditorWindow
 {
     [MenuItem("Edit/Do Task")]
     private static void DoTask()
     {
-        GameObject[] spheres = FindObjectsOfType(typeof(GameObject), FindObjectsRecursively);
-        GameObject floor = FindObjectOfType<GameObject>(FindMode.Deep);
-
-        foreach (GameObject sphere in spheres)
+        for (int i = 0; i < 10; i++)
         {
-            if (floor != null && sphere != null)
-            {
-                Vector3 currentPosition = sphere.transform.position;
-                float distanceToFloor = Vector3.Distance(currentPosition, floor.transform.position);
-                Vector3 newPosition = currentPosition + new Vector3(0f, distanceToFloor, 0f);
-                sphere.transform.position = newPosition;
-            }
+            Vector3 randomPosition = Random.insideUnitSphere * 5f;
+            GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            sphere.transform.position = randomPosition;
         }
     }
 }

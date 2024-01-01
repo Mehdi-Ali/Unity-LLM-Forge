@@ -93,9 +93,7 @@ MonoBehaviour:
     Task\")]\r\n    private static void DoTask()\r\n    {\r\n        // an example
     of creating a primitive cube:\r\n        GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);\r\n   
     }\r\n}\n```\n"
-  _correctScriptPrompt: '
+  _correctScriptPrompt: 'Please correct the script and send it again.
 
-    Please correct the script and send it again.
-
-    And
-    please don''t forget to include the code between ```csharp and ```.'
+    And please
+    don''t forget to include the code between ```csharp and ```.'

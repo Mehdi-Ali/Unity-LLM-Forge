@@ -1,20 +1,9 @@
-using System;
-using System.Collections;
-using System.Text;
 using UnityEngine;
-using UnityEngine.Networking;
-using EasyButtons;
 using System.Collections.Generic;
-using Newtonsoft.Json;
 using UnityEditor;
-using Unity.EditorCoroutines.Editor;
-using UnityEngine.UIElements;
-using Unity.VisualScripting;
-using System.Text.RegularExpressions;
 using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
-using UnityEngine.SocialPlatforms;
 
 
 namespace UAA
@@ -440,7 +429,7 @@ namespace UAA
                 UAACommand.DeleteGeneratedScript();
 
             if (GUILayout.Button("Save Command History"))
-                UAAChat.SaveChatHistory(UAACommand.LLMInput.messages, false);
+                UAAChat.SaveChatHistory(UAACommand.LLMInput.messages, isCommand : true);
             if (GUILayout.Button("Log command History"))
                 LogMessages(UAACommand.LLMInput.messages);
         }

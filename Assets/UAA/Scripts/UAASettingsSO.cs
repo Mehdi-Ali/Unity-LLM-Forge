@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 
@@ -17,7 +18,7 @@ namespace UAA
         public bool LocalLLM = true;
 
         [Header("LLM Parameters")]
-        public float Temperature = 0.5f;
+        public float Temperature = 0.2f;
         public int MaxTokens = -1;
         public bool Stream = true;
 
@@ -35,9 +36,12 @@ namespace UAA
 
         [Header("Runtime / cache")]
         public bool IsLLMAvailable = true;
+        public bool IsCorrectingScript = false;
         public CorrectingStates CorrectingState = CorrectingStates.NotFixing;
         public List<Message> CachedChatHistory = new List<Message>();
         public LocalLLMRequestInput CachedLLMInput;
+        [TextArea(1, 5)] public string ErrorLogs;
+
 
         [Header("Prompts")]
         [SerializeField, TextArea(3, 10)] private string _defaultSystemMessage = UAADefaultPrompts.DefaultSystemMessage;

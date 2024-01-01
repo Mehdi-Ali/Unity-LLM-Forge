@@ -54,7 +54,7 @@ namespace UAA
                 if (UAAWindow.selectedChatHistoryIndex <= UAAWindow.SavedChatHistoryPaths.Length - 1)
                     index = UAAWindow.selectedChatHistoryIndex;
 
-                SaveChatHistory(UAAWindow.ChatHistory, false);
+                SaveChatHistory(UAAWindow.ChatHistory, setIndex : false);
             }
 
             UAAWindow.ChatHistory = new List<Message>(UAAWindow.SavedChatHistory.ChatHistory);
@@ -65,7 +65,7 @@ namespace UAA
             UAAWindow.selectedChatHistoryIndex = -1;
 
             if (UAAWindow.SaveOnNewChat == true)
-                SaveChatHistory(UAAWindow.ChatHistory, false);
+                SaveChatHistory(UAAWindow.ChatHistory, setIndex : false);
 
             while (!UAAWindow.IsLLMAvailable)
             {
@@ -86,7 +86,7 @@ namespace UAA
             _ = UAAWindow.LLMChat();
         }
 
-        public static void SaveChatHistory(List<Message> messages, bool setIndex = true)
+        public static void SaveChatHistory(List<Message> messages, bool setIndex = true, bool isCommand = false)
         {
             if (messages.Count <= 0)
                 return;
@@ -95,6 +95,10 @@ namespace UAA
             string dateTime = DateTime.Now.ToString("yy-MM-dd HH-mm");
 
             string assetPath = ChatHistoryFolderPath + $"/{dateTime} Chat History.asset";
+
+            if (isCommand)
+                assetPath = ChatHistoryFolderPath + $"/{dateTime} Command.asset";
+            
             AssetDatabase.CreateAsset(saveSlot, assetPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -103,11 +107,11 @@ namespace UAA
             if (setIndex)
                 UAAWindow.selectedChatHistoryIndex = UAAWindow.SavedChatHistoryPaths.Length;
 
-            _ = RenameChatHistory(dateTime, assetPath);
+            _ = RenameChatHistory(dateTime, assetPath, isCommand);
 
         }
 
-        private static async Task RenameChatHistory(string dateTime, string assetPath)
+        private static async Task RenameChatHistory(string dateTime, string assetPath, bool isCommand = false)
         {
 
             UAAWindow.ChatHistory.Add(new Message { role = "user", content = Settings.TitlePrompt });
@@ -117,7 +121,12 @@ namespace UAA
 
             UAAWindow.ChatHistory.RemoveAt(UAAWindow.ChatHistory.Count - 1);
             UAAWindow.ChatHistory.RemoveAt(UAAWindow.ChatHistory.Count - 1);
-            AssetDatabase.RenameAsset(assetPath, $"{dateTime} {chatHistoryName}.asset");
+
+            var assetName = $"{dateTime} {chatHistoryName}.asset";
+            if (isCommand)
+                assetName = $"{dateTime} Command: {chatHistoryName}.asset";
+
+            AssetDatabase.RenameAsset(assetPath, assetName);
 
             UAAChat.RefreshChatHistory();
         }

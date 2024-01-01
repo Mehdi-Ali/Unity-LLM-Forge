@@ -50,17 +50,28 @@ namespace UAA
             set => Settings.CorrectScriptPrompt = value;
         }
 
+        private static bool IsCorrectingScript
+        {
+            get => Settings.IsCorrectingScript;
+            set => Settings.IsCorrectingScript = value;
+        }
+
         private static CorrectingStates CorrectingState
         {
             get => Settings.CorrectingState;
             set => Settings.CorrectingState = value;
         }
 
+        private static string ErrorLogs
+        {
+            get => Settings.ErrorLogs;
+            set => Settings.ErrorLogs = value;
+        }
+
         private static string TempFilePath => Settings.TempFilePath;
         private static bool TempFileExists => System.IO.File.Exists(TempFilePath);
 
         private static readonly List<string> _tasks = new();
-        private static readonly StringBuilder _errorContent = new();
         private static string script = "";
 
 
@@ -74,16 +85,15 @@ namespace UAA
         {
             if (type == LogType.Error || type == LogType.Exception)
             {
-                _errorContent.AppendLine(logString);
+                ErrorLogs += logString;
             }
         }
 
         [InitializeOnLoadMethod]
         public static async void Resume()
         {
-            // add a bool that control if we are correcting or not ( idk if only doable through the CorrectingState)
             await Task.Delay(1000);
-            Debug.Log("Resume");
+            Debug.Log("Resuming");
             switch (CorrectingState)
             {
                 case CorrectingStates.FixingIDErrors:
@@ -102,6 +112,7 @@ namespace UAA
             if (string.IsNullOrEmpty(UAAWindow.UserCommandMessage))
                 UAAWindow.UserCommandMessage = UAADefaultPrompts.DefaultUserCommandMessage;
 
+            ErrorLogs = null;
             //_tasks = await SimplifyCommand(prompt);
             // to simplify things let's not separate the tasks for now
 
@@ -152,6 +163,12 @@ namespace UAA
             UAAWindow.GeneratedString = GetOnlyScript(UAAWindow.GeneratedString);
             script = UAAWindow.GeneratedString;
 
+            LLMInput.messages.Add(new Message
+            {
+                role = Role.assistant.ToString(),
+                content = "```csharp\n" + script + "\n```"
+            });
+
             CorrectingState = CorrectingStates.FixingIDErrors;
             CreateScriptAsset(script, isUpdatingScript);
         }
@@ -170,6 +187,7 @@ namespace UAA
             if (isUpdatingScript)
                 AssetDatabase.DeleteAsset(TempFilePath);
 
+            IsCorrectingScript = false;
             var flags = BindingFlags.Static | BindingFlags.NonPublic;
             var method = typeof(ProjectWindowUtil).GetMethod("CreateScriptAssetWithContent", flags);
             method.Invoke(null, new object[] { TempFilePath, code });
@@ -188,13 +206,13 @@ namespace UAA
 
         public static void DeleteGeneratedScript()
         {
+            // todo i should achieve instead of completely deleting;
             AssetDatabase.DeleteAsset(TempFilePath);
         }
 
         private static async void CheckForIDEErrors()
         {
-            Debug.Log("Check For IDE Errors");
-            if (_errorContent.Length > 0)
+            if (!string.IsNullOrEmpty(ErrorLogs))
                 await CorrectScript();
             else
             {
@@ -205,8 +223,7 @@ namespace UAA
 
         private static async void CheckForRuntimeErrors()
         {
-            Debug.Log("Check For Runtime Errors");
-            if (_errorContent.Length > 0)
+            if (!string.IsNullOrEmpty(ErrorLogs))
                 await CorrectScript();
             else
             {
@@ -216,22 +233,21 @@ namespace UAA
 
         public static async Task CorrectScript()
         {
+            if (IsCorrectingScript)
+                return;
 
-            LLMInput.messages.Add(new Message
-            {
-                role = Role.assistant.ToString(),
-                content = "```csharp\n" + UAAWindow.GeneratedString + "\n```"
-            });
+            IsCorrectingScript = true;
+            
 
             LLMInput.messages.Add(new Message
             {
                 role = Role.user.ToString(),
                 content = "Here's Unity's Console Error Logs :\n" +
-                            _errorContent.ToString() +
+                            ErrorLogs +
                             CorrectScriptPrompt
             });
 
-            _errorContent.Clear();
+            ErrorLogs = null;
             UAAWindow.GeneratedString = "Correcting...";
             await CreateScript(true);
         }

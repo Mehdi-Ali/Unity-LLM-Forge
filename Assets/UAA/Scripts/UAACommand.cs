@@ -34,20 +34,20 @@ namespace UAA
 
         private static string SimplifyCommandToTasksPrompt
         {
-            get => Settings.SimplifyCommandToTasksPrompt;
-            set => Settings.SimplifyCommandToTasksPrompt = value;
+            get => Settings.Prompts.SimplifyCommandToTasksPrompt;
+            set => Settings.Prompts.SimplifyCommandToTasksPrompt = value;
         }
 
         private static string TaskToScriptPrompt
         {
-            get => Settings.TaskToScriptPrompt;
-            set => Settings.TaskToScriptPrompt = value;
+            get => Settings.Prompts.TaskToScriptPrompt;
+            set => Settings.Prompts.TaskToScriptPrompt = value;
         }
 
         private static string CorrectScriptPrompt
         {
-            get => Settings.CorrectScriptPrompt;
-            set => Settings.CorrectScriptPrompt = value;
+            get => Settings.Prompts.CorrectScriptPrompt;
+            set => Settings.Prompts.CorrectScriptPrompt = value;
         }
 
         private static bool IsCorrectingScript
@@ -71,9 +71,10 @@ namespace UAA
         private static string TempFilePath => Settings.TempFilePath;
         private static bool TempFileExists => System.IO.File.Exists(TempFilePath);
 
+        public static int MaxIterationsBeforeRestarting => Settings.MaxIterationsBeforeRestarting;
+
         private static readonly List<string> _tasks = new();
         private static string script = "";
-        private static string _cachedCommand;
 
 
 
@@ -96,7 +97,7 @@ namespace UAA
         public static async void Resume()
         {
             await Task.Delay(1000);
-            Debug.Log("Resuming");
+            //Debug.Log("Resuming");
             switch (CorrectingState)
             {
                 case CorrectingStates.FixingIDErrors:
@@ -110,10 +111,10 @@ namespace UAA
             }
         }
 
-        public static async void InitializeCommand(string prompt)
+        public static async void InitializeCommand()
         {
-            if (string.IsNullOrEmpty(prompt))
-                prompt = UAAWindow.UserCommandMessage = _cachedCommand = UAADefaultPrompts.DefaultUserCommandMessage;
+            if (string.IsNullOrEmpty(UAAWindow.UserCommandMessage))
+                UAAWindow.UserCommandMessage = UAADefaultPrompts.DefaultUserCommandMessage;
 
             ErrorLogs = null;
 
@@ -122,7 +123,7 @@ namespace UAA
 
             UAAWindow.GeneratedString = "coding...";
             await Task.Delay(0);
-            HandleTask(prompt);
+            HandleTask(UAAWindow.UserCommandMessage);
         }
 
         private static async Task<List<string>> SimplifyCommand(string commandPrompt)
@@ -159,6 +160,13 @@ namespace UAA
 
         private static async Task CreateScript(bool isUpdatingScript = false)
         {
+
+            if (LLMInput.messages.Count > MaxIterationsBeforeRestarting * 2)
+            {
+                InitializeCommand();
+                return;
+            }
+
             // LLMInput.messages.Add(new Message
             // {
             //     role = Role.assistant.ToString(),
@@ -206,10 +214,12 @@ namespace UAA
 
             if (TempFileExists)
             {
-                Debug.Log("*******************");
                 var previousCode = System.IO.File.ReadAllText(TempFilePath);
                 if (previousCode == code)
-                    InitializeCommand(_cachedCommand);
+                {
+                    InitializeCommand();
+                    return;
+                }
             }
 
             var flags = BindingFlags.Static | BindingFlags.NonPublic;

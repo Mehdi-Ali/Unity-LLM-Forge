@@ -47,6 +47,8 @@ namespace UAA
 
         public static async Task<string> SendAndReceiveNonStreamedMessages(LocalLLMRequestInput llmInput)
         {
+            UAAWindow.IsLLMAvailable = false;
+            
             var post = UnityWebRequest.PostWwwForm(Url, "POST");
             string jsonMessage;
 
@@ -75,6 +77,8 @@ namespace UAA
                 await Task.Delay(10);
             }
 
+            UAAWindow.IsLLMAvailable = false;
+
             if (post.result == UnityWebRequest.Result.Success)
             {
                 var jsonResponse = JsonUtility.FromJson<LocalLLMResponse>(post.downloadHandler.text);
@@ -89,6 +93,8 @@ namespace UAA
 
         public static async Task SendAndReceiveStreamedMessages(LocalLLMRequestInput llmInput, Action<string> callback)
         {
+            UAAWindow.IsLLMAvailable = false;
+
             HttpClient client = new();
 
             HttpRequestMessage request = new(HttpMethod.Post, Url);
@@ -181,6 +187,8 @@ namespace UAA
             {
                 callback("Error: " + response.StatusCode);
             }
+
+            UAAWindow.IsLLMAvailable = true;
         }
 
         public static List<string> SplitJsonObjects(string data)

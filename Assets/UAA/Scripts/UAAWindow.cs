@@ -81,20 +81,20 @@ namespace UAA
 
         public static string SystemMessage
         {
-            get => Settings.SystemMessage;
-            set => Settings.SystemMessage = value;
+            get => Settings.Prompts.SystemMessage;
+            set => Settings.Prompts.SystemMessage = value;
         }
 
         public static string UserChatMessage
         {
-            get => Settings.UserChatMessage;
-            set => Settings.UserChatMessage = value;
+            get => Settings.Prompts.UserChatMessage;
+            set => Settings.Prompts.UserChatMessage = value;
         }
 
         public static string UserCommandMessage
         {
-            get => Settings.UserCommandMessage;
-            set => Settings.UserCommandMessage = value;
+            get => Settings.Prompts.UserCommandMessage;
+            set => Settings.Prompts.UserCommandMessage = value;
         }
 
         public static bool IsLLMAvailable
@@ -127,26 +127,32 @@ namespace UAA
 
         public static string TitlePrompt
         {
-            get => Settings.TitlePrompt;
-            set => Settings.TitlePrompt = value;
+            get => Settings.Prompts.TitlePrompt;
+            set => Settings.Prompts.TitlePrompt = value;
         }
 
         public static string SimplifyCommandToTasksPrompt
         {
-            get => Settings.SimplifyCommandToTasksPrompt;
-            set => Settings.SimplifyCommandToTasksPrompt = value;
+            get => Settings.Prompts.SimplifyCommandToTasksPrompt;
+            set => Settings.Prompts.SimplifyCommandToTasksPrompt = value;
         }
 
         public static string TaskToScriptPrompt
         {
-            get => Settings.TaskToScriptPrompt;
-            set => Settings.TaskToScriptPrompt = value;
+            get => Settings.Prompts.TaskToScriptPrompt;
+            set => Settings.Prompts.TaskToScriptPrompt = value;
         }
 
         public static string CorrectScriptPrompt
         {
-            get => Settings.CorrectScriptPrompt;
-            set => Settings.CorrectScriptPrompt = value;
+            get => Settings.Prompts.CorrectScriptPrompt;
+            set => Settings.Prompts.CorrectScriptPrompt = value;
+        }
+
+        public static int MaxIterationsBeforeRestarting
+        {
+            get => Settings.MaxIterationsBeforeRestarting;
+            set => Settings.MaxIterationsBeforeRestarting = value;
         }
 
         #endregion Logic Variables ----------------------------------------------------------------------------------------------------------------------------
@@ -280,7 +286,9 @@ namespace UAA
 
             }
 
+            MaxIterationsBeforeRestarting = EditorGUILayout.IntSlider("Max Iteration Before Restarting", MaxIterationsBeforeRestarting, 2 , 15);
             EditorGUILayout.LabelField("Profile Description");
+        
             _scrollPositionSystemMessage = EditorGUILayout.BeginScrollView(_scrollPositionSystemMessage, GUILayout.Height(200));
             SystemMessage = GUILayout.TextArea(SystemMessage, GUILayout.ExpandHeight(true));
             EditorGUILayout.EndScrollView();
@@ -428,16 +436,16 @@ namespace UAA
             if (GUILayout.Button("Ask Assistant to correct Script"))
                 _ = UAACommand.CorrectScript();
 
-            if (GUILayout.Button("ClearLogs"))
-                UAACommand.ClearLog();
+            // if (GUILayout.Button("ClearLogs"))
+            //     UAACommand.ClearLog();
 
             if (GUILayout.Button("Delete Generated Script"))
                 UAACommand.DeleteGeneratedScript();
 
             if (GUILayout.Button("Save Command History"))
                 UAAChat.SaveChatHistory(setIndex: false, isCommand: true);
-            if (GUILayout.Button("Log command History"))
-                LogMessages(UAACommand.LLMInput.messages);
+            // if (GUILayout.Button("Log command History"))
+            //     LogMessages(UAACommand.LLMInput.messages);
         }
 
         private void OnInspectorUpdate()
@@ -526,7 +534,7 @@ namespace UAA
             if (IsLLMAvailable == false)
                 return;
 
-            UAACommand.InitializeCommand(UserCommandMessage);
+            UAACommand.InitializeCommand();
         }
 
         private void StopGenerating()

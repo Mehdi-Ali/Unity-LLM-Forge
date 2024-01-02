@@ -8,9 +8,10 @@ public class UAAGeneratedScript : EditorWindow
     {
         for (int i = 0; i < 10; i++)
         {
-            Vector3 randomPosition = new Vector3(Random.Range(-5f, 5f), Random.Range(-5f, 5f), Random.Range(-5f, 5f));
-            GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            sphere.transform.position = randomPosition;
+            GameObject spherePrefab = Resources.Load<GameObject>("StandardSphere");
+            if(spherePrefab == null) continue; // check if prefab is not null before instantiating
+            Vector3 randomPosition = new Vector3(Random.Range(-5f, Random.Range(-5f, 5f)), Random.Range(-5f, Random.Range(-5f, 5f)), Random.Range(-5f, Random.Range(-5f, 5f)));
+            GameObject sphere = UnityEngine.Object.Instantiate(spherePrefab, randomPosition, Quaternion.identity);
         }
     }
 }

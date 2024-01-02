@@ -118,7 +118,7 @@ namespace UAA
         {
             var messages = isCommand ? UAAWindow.CommandHistory : UAAWindow.ChatHistory;
 
-            messages.Add(new Message { role = Role.user.ToString(), content = Settings.TitlePrompt });
+            messages.Add(new Message { role = Role.user.ToString(), content = Settings.Prompts.TitlePrompt });
 
             await UAAWindow.LLMChat(isCommand, forceNonStream: true);
 
@@ -131,8 +131,6 @@ namespace UAA
             if (isCommand)
                 assetName = $"{dateTime} Command {chatHistoryName}.asset";
             
-            UnityEngine.Debug.Log($"Renaming {assetPath} to {assetName}");
-
             AssetDatabase.RenameAsset(assetPath, assetName);
 
             UAAChat.RefreshChatHistory();

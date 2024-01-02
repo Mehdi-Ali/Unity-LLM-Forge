@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using EasyButtons;
 using UnityEngine;
 
 
@@ -23,6 +24,7 @@ namespace UAA
         public bool Stream = true;
 
         [Header("Quality of Life Settings")]
+        public int MaxIterationsBeforeRestarting = 3;
         public bool SaveOnNewChat = false;
         public bool SaveOnLoad = false;
         public bool CallOnAwake = false;
@@ -38,12 +40,24 @@ namespace UAA
         public bool IsLLMAvailable = true;
         public bool IsCorrectingScript = false;
         public CorrectingStates CorrectingState = CorrectingStates.NotFixing;
+
+        [Button()]
+        public void ClearCache()
+        {
+            CachedChatHistory.Clear();
+            CachedLLMInput = new();
+        }
+
         public List<Message> CachedChatHistory = new List<Message>();
         public LocalLLMRequestInput CachedLLMInput;
         [TextArea(1, 5)] public string ErrorLogs;
 
+        public Prompts Prompts = new();
+    }
 
-        [Header("Prompts")]
+    [Serializable] 
+    public class Prompts
+    {
         [SerializeField, TextArea(3, 10)] private string _defaultSystemMessage = UAADefaultPrompts.DefaultSystemMessage;
         public string SystemMessage
         {
@@ -79,7 +93,7 @@ namespace UAA
             set { _simplifyCommandToTasksPrompt = value; }
         }
 
-        [SerializeField, TextArea(3, 10)] private string _taskToScriptPrompt = UAADefaultPrompts.DefaultTaskToScriptPrompt;	
+        [SerializeField, TextArea(3, 10)] private string _taskToScriptPrompt = UAADefaultPrompts.DefaultTaskToScriptPrompt;
         public string TaskToScriptPrompt
         {
             get { return string.IsNullOrEmpty(_taskToScriptPrompt) ? UAADefaultPrompts.DefaultTaskToScriptPrompt : _taskToScriptPrompt; }

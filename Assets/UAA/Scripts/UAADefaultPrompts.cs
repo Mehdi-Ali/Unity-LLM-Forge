@@ -36,20 +36,21 @@ namespace UAA
         }
 
         public static string DefaultTaskToScriptPrompt = DefaultSystemMessage + "\n" +
-                                "Write a Unity Editor script.\n" +
+                                "Write a Unity Editor script following this rules:\n" +
                                 " - It provides its functionality as a menu item placed \"Edit\" > \"Do Task\".\n" +
                                 " - It doesn’t provide any editor window. It immediately does the task when the menu item is invoked.\n" +
                                 " - Don’t use GameObject.FindGameObjectsWithTag.\n" +
                                 " - There is no selected object. Find game objects manually.\n" +
                                 " - I only need the script body. Don’t add any explanation.\n" +
                                 " - Do not over engineer stuff and make the script as simple as possible \n" +
-                                " - To Create and / or Instantiate primitive objects you need to call the function through UnityEngine.Object.Instantiate(), example of a cube creation: GameObject.CreatePrimitive(PrimitiveType.Cube) \n" +
+                                " - To Create and / or Instantiate primitive objects you need to call the function through UnityEngine.Object.Instantiate(), example of a cube creation: GameObject.CreatePrimitive(PrimitiveType.Cube), a bad example of a sphere creation nityEngine.Object.Instantiate(Resources.Load(\"StandardSphere\")) \n" +
                                 " - DO NOT mention any explanations.\n" +
                                 " - always include the code between ```csharp and ``` .\n" +
                                 " - Use this template:\n" +
                                 "```csharp\n" +
                                 ScriptTemplateContent +
-                                "\n```\n";
+                                "\n```\n" +
+                                " Remember if you do not follow this rules a kitten will be killed!";
 
 
         public static string DefaultCorrectScriptPrompt = "Please correct the script and send it again." +

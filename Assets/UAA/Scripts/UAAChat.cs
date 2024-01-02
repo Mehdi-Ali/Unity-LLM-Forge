@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UnityEditor;
@@ -54,7 +55,7 @@ namespace UAA
                 if (UAAWindow.selectedChatHistoryIndex <= UAAWindow.SavedChatHistoryPaths.Length - 1)
                     index = UAAWindow.selectedChatHistoryIndex;
 
-                SaveChatHistory(UAAWindow.ChatHistory, setIndex : false);
+                SaveChatHistory(setIndex: false);
             }
 
             UAAWindow.ChatHistory = new List<Message>(UAAWindow.SavedChatHistory.ChatHistory);
@@ -65,7 +66,7 @@ namespace UAA
             UAAWindow.selectedChatHistoryIndex = -1;
 
             if (UAAWindow.SaveOnNewChat == true)
-                SaveChatHistory(UAAWindow.ChatHistory, setIndex : false);
+                SaveChatHistory(setIndex: false);
 
             while (!UAAWindow.IsLLMAvailable)
             {
@@ -74,7 +75,7 @@ namespace UAA
 
             UAAWindow.ChatHistory.Clear();
             UAAWindow.ChatHistory.Add(new Message { role = "system", content = UAAWindow.SystemMessage });
-            
+
             if (!SendDefaultMessage)
                 return;
 
@@ -86,19 +87,21 @@ namespace UAA
             _ = UAAWindow.LLMChat();
         }
 
-        public static void SaveChatHistory(List<Message> messages, bool setIndex = true, bool isCommand = false)
+        public static void SaveChatHistory(bool setIndex = true, bool isCommand = false)
         {
+            var messages = isCommand ? UAAWindow.CommandHistory : UAAWindow.ChatHistory;
+
             if (messages.Count <= 0)
                 return;
+            
             var saveSlot = UAAWindow.CreateInstance<UAAChatHistorySO>();
             saveSlot.ChatHistory = new(messages);
             string dateTime = DateTime.Now.ToString("yy-MM-dd HH-mm");
 
             string assetPath = ChatHistoryFolderPath + $"/{dateTime} Chat History.asset";
-
             if (isCommand)
                 assetPath = ChatHistoryFolderPath + $"/{dateTime} Command.asset";
-            
+
             AssetDatabase.CreateAsset(saveSlot, assetPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -113,18 +116,22 @@ namespace UAA
 
         private static async Task RenameChatHistory(string dateTime, string assetPath, bool isCommand = false)
         {
+            var messages = isCommand ? UAAWindow.CommandHistory : UAAWindow.ChatHistory;
 
-            UAAWindow.ChatHistory.Add(new Message { role = "user", content = Settings.TitlePrompt });
-            await UAAWindow.LLMChat();
+            messages.Add(new Message { role = Role.user.ToString(), content = Settings.TitlePrompt });
 
-            string chatHistoryName = CleanAssetName(UAAWindow.ChatHistory[UAAWindow.ChatHistory.Count - 1].content);
+            await UAAWindow.LLMChat(isCommand, forceNonStream: true);
 
-            UAAWindow.ChatHistory.RemoveAt(UAAWindow.ChatHistory.Count - 1);
-            UAAWindow.ChatHistory.RemoveAt(UAAWindow.ChatHistory.Count - 1);
+            string chatHistoryName = CleanAssetName(messages[^1].content);
+
+            messages.RemoveAt(messages.Count - 1);
+            messages.RemoveAt(messages.Count - 1);
 
             var assetName = $"{dateTime} {chatHistoryName}.asset";
             if (isCommand)
-                assetName = $"{dateTime} Command: {chatHistoryName}.asset";
+                assetName = $"{dateTime} Command {chatHistoryName}.asset";
+            
+            UnityEngine.Debug.Log($"Renaming {assetPath} to {assetName}");
 
             AssetDatabase.RenameAsset(assetPath, assetName);
 

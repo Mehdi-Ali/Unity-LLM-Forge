@@ -116,6 +116,12 @@ namespace UAA
             set => Settings.CachedChatHistory = value;
         }
 
+        public static List<Message> CommandHistory
+        {
+            get => Settings.CachedLLMInput.messages;
+            set => Settings.CachedLLMInput.messages = value;
+        }
+
         public static string GeneratedString = "";
         public static UAAChatHistorySO SavedChatHistory;
 
@@ -178,7 +184,7 @@ namespace UAA
             { OpenAIModels.GPT_4, "gpt-4" },
             { OpenAIModels.GPT_3_5_Turbo, "gpt-3.5-turbo-1106" },
         };
-        
+
         private static bool _onEnter;
 
         public static string[] SavedChatHistoryPaths;
@@ -311,7 +317,7 @@ namespace UAA
 
             if (GUILayout.Button("Save Chat History"))
             {
-                UAAChat.SaveChatHistory(ChatHistory);
+                UAAChat.SaveChatHistory();
             }
 
             string[] savedChatHistoryNames = SavedChatHistoryPaths.Select(path => Path.GetFileNameWithoutExtension(path)).ToArray();
@@ -420,7 +426,7 @@ namespace UAA
                 UAACommand.ExecuteScript();
 
             if (GUILayout.Button("Ask Assistant to correct Script"))
-                UAACommand.CorrectScript();
+                _ = UAACommand.CorrectScript();
 
             if (GUILayout.Button("ClearLogs"))
                 UAACommand.ClearLog();
@@ -429,7 +435,7 @@ namespace UAA
                 UAACommand.DeleteGeneratedScript();
 
             if (GUILayout.Button("Save Command History"))
-                UAAChat.SaveChatHistory(UAACommand.LLMInput.messages, isCommand : true);
+                UAAChat.SaveChatHistory(setIndex: false, isCommand: true);
             if (GUILayout.Button("Log command History"))
                 LogMessages(UAACommand.LLMInput.messages);
         }
@@ -456,42 +462,47 @@ namespace UAA
                 _ = UAAChat.InitializeNewChat();
         }
 
-        public static async Task LLMChat()
+        public static async Task LLMChat(bool isCommand = false, bool forceNonStream = false)
         {
             IsLLMAvailable = false;
+            var messages = isCommand ? CommandHistory : ChatHistory;
 
             var llmInput = new LocalLLMRequestInput
             {
-                messages = ChatHistory,
+                messages = messages,
                 temperature = Temperature,
                 max_tokens = MaxTokens,
-                stream = Stream
+                stream = !forceNonStream && Stream
             };
-
-            if (Stream)
+            if (llmInput.stream)
             {
                 await UAAConnection.SendAndReceiveStreamedMessages(llmInput, messageContent =>
                 {
-                    if (ChatHistory.Last().role == "assistant")
-                        ChatHistory.RemoveAt(ChatHistory.Count - 1);
+                    RemoveAssistantStreamingMessages(messages);
+                    messages.Add(new Message { role = "assistant", content = messageContent });
 
-                    ChatHistory.Add(new Message { role = "assistant", content = messageContent });
-
-                    if (_scrollPositionChatHistory.y > totalHeight * 0.75)
+                    if (_scrollPositionChatHistory.y > totalHeight * 0.75 && !isCommand)
                         _scrollPositionChatHistory.y = Mathf.Infinity;
                 });
             }
-
             else
             {
-                ChatHistory.Add(new Message { role = "assistant", content = "Crafting a response…" });
+                messages.Add(new Message { role = "assistant", content = "Crafting a response…" });
                 string messageContent = await UAAConnection.SendAndReceiveNonStreamedMessages(llmInput);
-                ChatHistory.RemoveAt(ChatHistory.Count - 1);
-                ChatHistory.Add(new Message { role = "assistant", content = messageContent });
+                messages.RemoveAt(messages.Count - 1);
+                messages.Add(new Message { role = Role.assistant.ToString() , content = messageContent });
             }
 
-            _scrollPositionChatHistory.y = Mathf.Infinity;
+            if (!isCommand)
+                _scrollPositionChatHistory.y = Mathf.Infinity;
+
             IsLLMAvailable = true;
+        }
+
+        private static void RemoveAssistantStreamingMessages(List<Message> messages)
+        {
+            if (messages.Last().role == "assistant")
+                messages.RemoveAt(messages.Count - 1);
         }
 
         private async void SendMessage()
@@ -535,7 +546,7 @@ namespace UAA
         private void OnDestroy()
         {
             if (SaveOnClose)
-                UAAChat.SaveChatHistory(ChatHistory);
+                UAAChat.SaveChatHistory();
 
             UAACommand.UnsubscribeFromEvents();
         }

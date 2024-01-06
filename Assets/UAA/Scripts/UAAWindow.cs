@@ -401,7 +401,7 @@ namespace UAA
                 _scrollPositionChatHistory.y = Mathf.Infinity;
                 Repaint();
             }
-            if (GUILayout.Button("Stop Generating") || _onEnter)
+            if (GUILayout.Button("Stop Generating"))
             {
                 StopGenerating();
             }
@@ -423,6 +423,11 @@ namespace UAA
                 Repaint();
             }
 
+            if (GUILayout.Button("Stop Generating"))
+            {
+                StopGenerating();
+            }
+            
             EditorGUILayout.LabelField("Current Task's Script...", EditorStyles.boldLabel);
             _scrollPositionGeneratedScript = EditorGUILayout.BeginScrollView(_scrollPositionGeneratedScript, GUILayout.Height(600));
             GeneratedString = GUILayout.TextArea(GeneratedString, GUILayout.ExpandHeight(true));

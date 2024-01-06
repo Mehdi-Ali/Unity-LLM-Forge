@@ -21,6 +21,9 @@ namespace UAA
         private static string OpenAI_API_Key => UAAWindow.OpenAI_API_Key;
         private static string OpenAI_API_model => UAAWindow.OpenAI_API_model;
 
+        private static CancellationTokenSource _cts;
+
+
         public static LocalLLMRequestInput CreateLLMInput(string systemPrompt, string userPrompt)
         {
             return new LocalLLMRequestInput
@@ -48,7 +51,7 @@ namespace UAA
         public static async Task<string> SendAndReceiveNonStreamedMessages(LocalLLMRequestInput llmInput)
         {
             UAAWindow.IsLLMAvailable = false;
-            
+
             var post = UnityWebRequest.PostWwwForm(Url, "POST");
             string jsonMessage;
 
@@ -115,9 +118,11 @@ namespace UAA
             else
                 jsonMessage = JsonConvert.SerializeObject(llmInput);
 
-
             request.Content = new StringContent(jsonMessage, Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+            _cts?.Dispose();
+            _cts = new();
+            HttpResponseMessage response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, _cts.Token);
 
             if (response.IsSuccessStatusCode)
             {
@@ -127,9 +132,9 @@ namespace UAA
                 int bytesRead;
                 StringBuilder messageContent = new StringBuilder();
 
-                var isStillStreaming = true;
-                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0 && isStillStreaming)
+                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, _cts.Token)) > 0)
                 {
+                        
                     string chunk = Encoding.UTF8.GetString(buffer, 0, bytesRead);
 
                     if (!UAAWindow.LocalLLM)
@@ -147,8 +152,8 @@ namespace UAA
                                 if (delta == null)
                                     continue;
 
-                                if (delta.IsEmpty())
-                                    isStillStreaming = false;
+                                // if (delta.IsEmpty())
+                                //     _isStillStreaming = false;
 
                                 messageContent.Append(delta.content);
                                 callback(messageContent.ToString());
@@ -216,9 +221,9 @@ namespace UAA
             return chunk;
         }
 
-        internal static void StopGenerating()
+        public static void StopGenerating()
         {
-            // Couldn't find any documentation on how to do it, need to check later on
+            _cts.Cancel();
             Debug.Log("StopGenerating is not implemented yet");
         }
     }

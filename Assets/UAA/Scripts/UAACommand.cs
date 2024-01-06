@@ -161,7 +161,7 @@ namespace UAA
         private static async Task CreateScript(bool isUpdatingScript = false)
         {
 
-            if (LLMInput.messages.Count > MaxIterationsBeforeRestarting * 2)
+            if (LLMInput.messages.Count > MaxIterationsBeforeRestarting * 2 + 1)
             {
                 InitializeCommand();
                 return;

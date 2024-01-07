@@ -97,7 +97,6 @@ namespace UAA
         public static async void Resume()
         {
             await Task.Delay(1000);
-            //Debug.Log("Resuming");
             switch (CorrectingState)
             {
                 case CorrectingStates.FixingIDErrors:

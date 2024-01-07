@@ -321,7 +321,6 @@ namespace UAA
             {
                 _ = UAAChat.InitializeNewChat();
             }
-            // SaveOnNewChat = EditorGUILayout.Toggle("Save current chat OnNew Chat", SaveOnNewChat);
 
             if (GUILayout.Button("Save Chat History"))
             {
@@ -338,13 +337,6 @@ namespace UAA
                 else
                     SavedChatHistory = AssetDatabase.LoadAssetAtPath<UAAChatHistorySO>(SavedChatHistoryPaths[selectedChatHistoryIndex]);
             }
-
-            // SaveOnLoad = EditorGUILayout.Toggle("Save current chat OnLoad ", SaveOnLoad);
-
-            // if (GUILayout.Button("Refresh Chat History List"))
-            // {
-            //     UAAChat.RefreshChatHistory();
-            // }
 
             if (GUILayout.Button("Load Chat History"))
             {
@@ -427,7 +419,7 @@ namespace UAA
             {
                 StopGenerating();
             }
-            
+
             EditorGUILayout.LabelField("Current Task's Script...", EditorStyles.boldLabel);
             _scrollPositionGeneratedScript = EditorGUILayout.BeginScrollView(_scrollPositionGeneratedScript, GUILayout.Height(600));
             GeneratedString = GUILayout.TextArea(GeneratedString, GUILayout.ExpandHeight(true));
@@ -441,16 +433,11 @@ namespace UAA
             if (GUILayout.Button("Ask Assistant to correct Script"))
                 _ = UAACommand.CorrectScript();
 
-            // if (GUILayout.Button("ClearLogs"))
-            //     UAACommand.ClearLog();
-
             if (GUILayout.Button("Delete Generated Script"))
                 UAACommand.DeleteGeneratedScript();
 
             if (GUILayout.Button("Save Command History"))
                 UAAChat.SaveChatHistory(setIndex: false, isCommand: true);
-            // if (GUILayout.Button("Log command History"))
-            //     LogMessages(UAACommand.LLMInput.messages);
         }
 
         private void OnInspectorUpdate()

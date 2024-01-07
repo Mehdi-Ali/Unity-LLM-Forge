@@ -21,6 +21,8 @@ namespace UAA
         private static string OpenAI_API_Key => UAAWindow.OpenAI_API_Key;
         private static string OpenAI_API_model => UAAWindow.OpenAI_API_model;
 
+        private static HttpClient _client;
+        private static UnityWebRequest _post;
         private static CancellationTokenSource _cts;
 
 
@@ -52,7 +54,7 @@ namespace UAA
         {
             UAAWindow.IsLLMAvailable = false;
 
-            var post = UnityWebRequest.PostWwwForm(Url, "POST");
+            _post = UnityWebRequest.PostWwwForm(Url, "POST");
             string jsonMessage;
 
             if (!UAAWindow.LocalLLM)
@@ -63,42 +65,42 @@ namespace UAA
                     messages = llmInput.messages
                 });
 
-                post.timeout = Timeout.Infinite;
-                post.SetRequestHeader("Authorization", "Bearer " + OpenAI_API_Key);
+                _post.timeout = Timeout.Infinite;
+                _post.SetRequestHeader("Authorization", "Bearer " + OpenAI_API_Key);
             }
 
             else
                 jsonMessage = JsonConvert.SerializeObject(llmInput);
 
             byte[] bytesMessage = Encoding.UTF8.GetBytes(jsonMessage);
-            post.uploadHandler = new UploadHandlerRaw(bytesMessage);
-            post.SetRequestHeader("Content-Type", "application/json");
-            post.SendWebRequest();
+            _post.uploadHandler = new UploadHandlerRaw(bytesMessage);
+            _post.SetRequestHeader("Content-Type", "application/json");
+            _post.SendWebRequest();
 
-            while (!post.isDone)
+            while (!_post.isDone)
             {
                 await Task.Delay(10);
             }
 
             UAAWindow.IsLLMAvailable = false;
 
-            if (post.result == UnityWebRequest.Result.Success)
+            if (_post.result == UnityWebRequest.Result.Success)
             {
-                var jsonResponse = JsonUtility.FromJson<LocalLLMResponse>(post.downloadHandler.text);
+                var jsonResponse = JsonUtility.FromJson<LocalLLMResponse>(_post.downloadHandler.text);
                 var messageContent = jsonResponse.choices[0].message.content;
 
                 return messageContent.Trim();
             }
 
             else
-                return "Error: " + post.error;
+                return "Error: " + _post.error;
         }
 
         public static async Task SendAndReceiveStreamedMessages(LocalLLMRequestInput llmInput, Action<string> callback)
         {
             UAAWindow.IsLLMAvailable = false;
 
-            HttpClient client = new();
+            _client = new();
 
             HttpRequestMessage request = new(HttpMethod.Post, Url);
             string jsonMessage = "";
@@ -112,8 +114,8 @@ namespace UAA
                     stream = true
                 });
 
-                client.Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite);
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + OpenAI_API_Key);
+                _client.Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite);
+                _client.DefaultRequestHeaders.Add("Authorization", "Bearer " + OpenAI_API_Key);
             }
             else
                 jsonMessage = JsonConvert.SerializeObject(llmInput);
@@ -122,7 +124,7 @@ namespace UAA
 
             _cts?.Dispose();
             _cts = new();
-            HttpResponseMessage response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, _cts.Token);
+            HttpResponseMessage response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, _cts.Token);
 
             if (response.IsSuccessStatusCode)
             {
@@ -152,9 +154,6 @@ namespace UAA
                                 if (delta == null)
                                     continue;
 
-                                // if (delta.IsEmpty())
-                                //     _isStillStreaming = false;
-
                                 messageContent.Append(delta.content);
                                 callback(messageContent.ToString());
                             }
@@ -163,7 +162,6 @@ namespace UAA
                             {
                                 continue;
                             }
-
                         }
                     }
 
@@ -223,8 +221,9 @@ namespace UAA
 
         public static void StopGenerating()
         {
-            _cts.Cancel();
-            Debug.Log("StopGenerating is not implemented yet");
+            _post?.Abort(); // in cas of UnityWebRequest
+            _client?.Dispose(); // in case of HttpClient
+            _cts?.Cancel(); // CancellationTokenSource
         }
     }
 }

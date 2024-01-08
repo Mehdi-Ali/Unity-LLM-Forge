@@ -77,13 +77,11 @@ namespace UAA
 
         private static readonly List<string> _tasks = new();
         private static string script = "";
-        //private static bool _resumeAfterAssemblyReload = false;
 
 
         static UAACommand()
         {
             Application.logMessageReceived += SaveLogMessages;
-            AssemblyReloadEvents.afterAssemblyReload += CheckForIDEErrors;
         }
 
         private static void SaveLogMessages(string logString, string stackTrace, LogType type)
@@ -96,7 +94,7 @@ namespace UAA
 
         [InitializeOnLoadMethod]
         public static async void Resume()
-        {
+        {           
             await Task.Delay(1000);
             switch (CorrectingState)
             {
@@ -308,7 +306,6 @@ namespace UAA
         public static void UnsubscribeFromEvents()
         {
             Application.logMessageReceived -= SaveLogMessages;
-            AssemblyReloadEvents.afterAssemblyReload -= CheckForIDEErrors;
         }
     }
 }

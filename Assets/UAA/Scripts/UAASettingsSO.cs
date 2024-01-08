@@ -46,6 +46,10 @@ namespace UAA
         {
             CachedChatHistory.Clear();
             CachedLLMInput = new();
+            ErrorLogs = "";
+            IsLLMAvailable = true;
+            IsCorrectingScript = false;
+            CorrectingState = CorrectingStates.NotFixing;
         }
 
         public List<Message> CachedChatHistory = new List<Message>();
@@ -55,7 +59,7 @@ namespace UAA
         public Prompts Prompts = new();
     }
 
-    [Serializable] 
+    [Serializable]
     public class Prompts
     {
         [SerializeField, TextArea(3, 10)] private string _defaultSystemMessage = UAADefaultPrompts.DefaultSystemMessage;

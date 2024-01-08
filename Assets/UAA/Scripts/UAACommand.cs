@@ -26,6 +26,8 @@ namespace UAA
             }
         }
 
+        public static bool IsCommandAborted = false;
+
         public static LocalLLMRequestInput LLMInput
         {
             get => Settings.CachedLLMInput;
@@ -75,7 +77,7 @@ namespace UAA
 
         private static readonly List<string> _tasks = new();
         private static string script = "";
-
+        //private static bool _resumeAfterAssemblyReload = false;
 
 
         static UAACommand()
@@ -91,7 +93,6 @@ namespace UAA
                 ErrorLogs += " * " + logString + "\n" + stackTrace + "\n\n";
             }
         }
-
 
         [InitializeOnLoadMethod]
         public static async void Resume()
@@ -112,6 +113,9 @@ namespace UAA
 
         public static async void InitializeCommand()
         {
+            CorrectingState = CorrectingStates.NotFixing;
+            IsCorrectingScript = false;
+
             if (string.IsNullOrEmpty(UAAWindow.UserCommandMessage))
                 UAAWindow.UserCommandMessage = UAADefaultPrompts.DefaultUserCommandMessage;
 
@@ -182,6 +186,14 @@ namespace UAA
                 // }
                 UAAWindow.GeneratedString = generatedScript;
             });
+
+            if (IsCommandAborted)
+            {
+                Debug.Log("Command Stopped");
+                IsCommandAborted = false;
+                return;
+            }
+
             UAAWindow.GeneratedString = GetOnlyScript(UAAWindow.GeneratedString);
             script = UAAWindow.GeneratedString;
 

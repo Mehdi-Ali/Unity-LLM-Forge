@@ -533,6 +533,9 @@ namespace UAA
         {
             IsLLMAvailable = true;
             UAAConnection.StopGenerating();
+
+            if (_selectedTab == 2)
+                UAACommand.IsCommandAborted = true;
         }
 
         private static void LogMessages(List<Message> messages)

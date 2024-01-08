@@ -6,10 +6,15 @@ public class UAAGeneratedScript : EditorWindow
     [MenuItem("Edit/Do Task")]
     private static void DoTask()
     {
+        Vector3[] positions = new Vector3[10];
         for (int i = 0; i < 10; i++)
         {
-            Vector3 randomPosition = new Vector3(Random.Range(-5f, 5f), Random.Range(-5f, 5f), Random.Range(-5f, 5f));
-            GameObject sphere = UnityEngine.Object.Instantiate(UnityEngine.GameObject.CreatePrimitive(PrimitiveType.Sphere), randomPosition, Quaternion.identity);
+            positions[i] = Random.insideUnitSphere * 5f;
+        }
+        GameObject[] spheres = new GameObject[10];
+        for (int i = 0; i < 10; i++)
+        {
+            spheres[i] = UnityEngine.Object.Instantiate(Resources.Load("StandardSphere"), positions[i], Quaternion.identity) as GameObject;
         }
     }
 }

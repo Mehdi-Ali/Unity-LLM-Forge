@@ -15,7 +15,7 @@ namespace UAA
                                     "DO NOT MENTION ANY EXPLANATIONS if not asked";
 
         public static string DefaultUserChatMessage = "Introduce yourself briefly, start with a greeting or a simple hello or any human like greeting.";
-        public static string DefaultUserCommandMessage = "Create 10 spheres at random positions.";
+        public static string DefaultUserCommandMessage = "Create 10 primitive spheres at random positions.";
 
         public static string DefaultTitlePrompt = "Give me a title for this discussion, your answer will be directly used as name so dont't include and special none allowed character, " +
                                 " don't stay Title: and give the title directly" +

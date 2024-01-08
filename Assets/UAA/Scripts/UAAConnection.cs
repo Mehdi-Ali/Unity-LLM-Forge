@@ -54,35 +54,48 @@ namespace UAA
         {
             UAAWindow.IsLLMAvailable = false;
 
-            _post = UnityWebRequest.PostWwwForm(Url, "POST");
-            string jsonMessage;
-
-            if (!UAAWindow.LocalLLM)
+            try
             {
-                jsonMessage = JsonConvert.SerializeObject(new OpenAIRequestInput
+                _post = UnityWebRequest.PostWwwForm(Url, "POST");
+                string jsonMessage;
+
+                if (!UAAWindow.LocalLLM)
                 {
-                    model = OpenAI_API_model,
-                    messages = llmInput.messages
-                });
+                    jsonMessage = JsonConvert.SerializeObject(new OpenAIRequestInput
+                    {
+                        model = OpenAI_API_model,
+                        messages = llmInput.messages
+                    });
 
-                _post.timeout = Timeout.Infinite;
-                _post.SetRequestHeader("Authorization", "Bearer " + OpenAI_API_Key);
+                    _post.timeout = Timeout.Infinite;
+                    _post.SetRequestHeader("Authorization", "Bearer " + OpenAI_API_Key);
+                }
+
+                else
+                    jsonMessage = JsonConvert.SerializeObject(llmInput);
+
+                byte[] bytesMessage = Encoding.UTF8.GetBytes(jsonMessage);
+                _post.uploadHandler = new UploadHandlerRaw(bytesMessage);
+                _post.SetRequestHeader("Content-Type", "application/json");
+                _post.SendWebRequest();
+
+                while (!_post.isDone)
+                {
+                    await Task.Delay(10);
+                }
             }
-
-            else
-                jsonMessage = JsonConvert.SerializeObject(llmInput);
-
-            byte[] bytesMessage = Encoding.UTF8.GetBytes(jsonMessage);
-            _post.uploadHandler = new UploadHandlerRaw(bytesMessage);
-            _post.SetRequestHeader("Content-Type", "application/json");
-            _post.SendWebRequest();
-
-            while (!_post.isDone)
+            catch (OperationCanceledException)
             {
-                await Task.Delay(10);
+                Debug.Log("Request was cancelled.");
             }
-
-            UAAWindow.IsLLMAvailable = false;
+            catch (Exception ex)
+            {
+                Debug.Log("An error occurred: " + ex.Message);
+            }
+            finally
+            {
+                UAAWindow.IsLLMAvailable = true;
+            }
 
             if (_post.result == UnityWebRequest.Result.Success)
             {
@@ -100,98 +113,112 @@ namespace UAA
         {
             UAAWindow.IsLLMAvailable = false;
 
-            _client = new();
-
-            HttpRequestMessage request = new(HttpMethod.Post, Url);
-            string jsonMessage = "";
-
-            if (!UAAWindow.LocalLLM)
+            try
             {
-                jsonMessage = JsonConvert.SerializeObject(new OpenAIRequestInput
+                _client = new();
+
+                HttpRequestMessage request = new(HttpMethod.Post, Url);
+                string jsonMessage = "";
+
+                if (!UAAWindow.LocalLLM)
                 {
-                    model = OpenAI_API_model,
-                    messages = llmInput.messages,
-                    stream = true
-                });
-
-                _client.Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite);
-                _client.DefaultRequestHeaders.Add("Authorization", "Bearer " + OpenAI_API_Key);
-            }
-            else
-                jsonMessage = JsonConvert.SerializeObject(llmInput);
-
-            request.Content = new StringContent(jsonMessage, Encoding.UTF8, "application/json");
-
-            _cts?.Dispose();
-            _cts = new();
-            HttpResponseMessage response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, _cts.Token);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var stream = await response.Content.ReadAsStreamAsync();
-
-                byte[] buffer = new byte[8192];
-                int bytesRead;
-                StringBuilder messageContent = new StringBuilder();
-
-                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, _cts.Token)) > 0)
-                {
-                        
-                    string chunk = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-
-                    if (!UAAWindow.LocalLLM)
+                    jsonMessage = JsonConvert.SerializeObject(new OpenAIRequestInput
                     {
-                        List<string> dataList = SplitJsonObjects(chunk);
-                        foreach (var data in dataList)
+                        model = OpenAI_API_model,
+                        messages = llmInput.messages,
+                        stream = true
+                    });
+
+                    _client.Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite);
+                    _client.DefaultRequestHeaders.Add("Authorization", "Bearer " + OpenAI_API_Key);
+                }
+                else
+                    jsonMessage = JsonConvert.SerializeObject(llmInput);
+
+                request.Content = new StringContent(jsonMessage, Encoding.UTF8, "application/json");
+
+                _cts?.Dispose();
+                _cts = new();
+                HttpResponseMessage response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, _cts.Token);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var stream = await response.Content.ReadAsStreamAsync();
+
+                    byte[] buffer = new byte[8192];
+                    int bytesRead;
+                    StringBuilder messageContent = new StringBuilder();
+
+                    while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, _cts.Token)) > 0)
+                    {
+
+                        string chunk = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+
+                        if (!UAAWindow.LocalLLM)
                         {
+                            List<string> dataList = SplitJsonObjects(chunk);
+                            foreach (var data in dataList)
+                            {
+                                try
+                                {
+                                    OpenAIResponse jsonResponse = JsonUtility.FromJson<OpenAIResponse>(data);
+                                    if (jsonResponse == null)
+                                        continue;
+
+                                    OpenAIDelta delta = jsonResponse.choices[0].delta;
+                                    if (delta == null)
+                                        continue;
+
+                                    messageContent.Append(delta.content);
+                                    callback(messageContent.ToString());
+                                }
+
+                                catch (Exception)
+                                {
+                                    continue;
+                                }
+                            }
+                        }
+
+                        else
+                        {
+                            chunk = PrepareJason(chunk);
                             try
                             {
-                                OpenAIResponse jsonResponse = JsonUtility.FromJson<OpenAIResponse>(data);
-                                if (jsonResponse == null)
-                                    continue;
+                                var jsonResponse = JsonUtility.FromJson<LocalLLMResponse>(chunk);
+                                var delta = jsonResponse.choices[0].delta;
 
-                                OpenAIDelta delta = jsonResponse.choices[0].delta;
-                                if (delta == null)
-                                    continue;
+                                if (delta.IsEmpty())
+                                    break;
 
                                 messageContent.Append(delta.content);
                                 callback(messageContent.ToString());
                             }
-
                             catch (Exception)
                             {
                                 continue;
                             }
                         }
                     }
-
-                    else
-                    {
-                        chunk = PrepareJason(chunk);
-                        try
-                        {
-                            var jsonResponse = JsonUtility.FromJson<LocalLLMResponse>(chunk);
-                            var delta = jsonResponse.choices[0].delta;
-
-                            if (delta.IsEmpty())
-                                break;
-
-                            messageContent.Append(delta.content);
-                            callback(messageContent.ToString());
-                        }
-                        catch (Exception)
-                        {
-                            continue;
-                        }
-                    }
+                }
+                else
+                {
+                    callback("Error: " + response.StatusCode);
                 }
             }
-            else
-            {
-                callback("Error: " + response.StatusCode);
-            }
 
-            UAAWindow.IsLLMAvailable = true;
+            catch (OperationCanceledException)
+            {
+                Debug.Log("Request was cancelled.");
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("An error occurred: " + ex.Message);
+            }
+            finally
+            {
+                UAAWindow.IsLLMAvailable = true;
+            }
         }
 
         public static List<string> SplitJsonObjects(string data)
@@ -221,9 +248,9 @@ namespace UAA
 
         public static void StopGenerating()
         {
+            _cts?.Cancel(); // CancellationTokenSource
             _post?.Abort(); // in cas of UnityWebRequest
             _client?.Dispose(); // in case of HttpClient
-            _cts?.Cancel(); // CancellationTokenSource
         }
     }
 }

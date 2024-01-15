@@ -168,20 +168,8 @@ namespace UAA
                 return;
             }
 
-            // LLMInput.messages.Add(new Message
-            // {
-            //     role = Role.assistant.ToString(),
-            //     content = "```csharp\n" 
-            // });
-
-            // var firstTokenReceived = false;
             await UAAConnection.SendAndReceiveStreamedMessages(LLMInput, (generatedScript) =>
             {
-                // if (!firstTokenReceived)
-                // {
-                //     firstTokenReceived = true;
-                //     LLMInput.messages.RemoveAt(LLMInput.messages.Count - 1);
-                // }
                 UAAWindow.GeneratedString = generatedScript;
             });
 

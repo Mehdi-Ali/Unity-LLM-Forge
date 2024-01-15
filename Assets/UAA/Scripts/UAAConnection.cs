@@ -248,9 +248,9 @@ namespace UAA
 
         public static void StopGenerating()
         {
-            _cts?.Cancel(); // CancellationTokenSource
-            _post?.Abort(); // in cas of UnityWebRequest
-            _client?.Dispose(); // in case of HttpClient
+            _cts?.Cancel();
+            _post?.Abort();
+            _client?.Dispose();
         }
     }
 }

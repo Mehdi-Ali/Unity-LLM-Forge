@@ -560,13 +560,51 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8751123973131423356, guid: 1c9c73c3f30b42945856c3e846481474,
         type: 3}
-      propertyPath: _systemMessage
-      value: You are UAA my uncensored and unbiased Unity AI Assistant.
+      propertyPath: _userMessage
+      value: hey
       objectReference: {fileID: 0}
     - target: {fileID: 8751123973131423356, guid: 1c9c73c3f30b42945856c3e846481474,
         type: 3}
       propertyPath: _assistantMessage
-      value: 
+      value: Unity primarily uses C# for scripting, but it does support C++ through
+        the Unity Scripting Backend for C++ (IL2CPP). However, most developers and
+        assets in the Unity community use C#.
+      objectReference: {fileID: 0}
+    - target: {fileID: 8751123973131423356, guid: 1c9c73c3f30b42945856c3e846481474,
+        type: 3}
+      propertyPath: _chatHistory.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8751123973131423356, guid: 1c9c73c3f30b42945856c3e846481474,
+        type: 3}
+      propertyPath: _chatHistory.Array.data[3].role
+      value: user
+      objectReference: {fileID: 0}
+    - target: {fileID: 8751123973131423356, guid: 1c9c73c3f30b42945856c3e846481474,
+        type: 3}
+      propertyPath: _chatHistory.Array.data[4].role
+      value: assistant
+      objectReference: {fileID: 0}
+    - target: {fileID: 8751123973131423356, guid: 1c9c73c3f30b42945856c3e846481474,
+        type: 3}
+      propertyPath: _chatHistory.Array.data[2].content
+      value: 'Hello! How can I help you today? If you have any questions or need
+        assistance with Unity, feel free to ask. I''m here to help.
+
+
+'
+      objectReference: {fileID: 0}
+    - target: {fileID: 8751123973131423356, guid: 1c9c73c3f30b42945856c3e846481474,
+        type: 3}
+      propertyPath: _chatHistory.Array.data[3].content
+      value: does unity use c# or c++ ?
+      objectReference: {fileID: 0}
+    - target: {fileID: 8751123973131423356, guid: 1c9c73c3f30b42945856c3e846481474,
+        type: 3}
+      propertyPath: _chatHistory.Array.data[4].content
+      value: Unity primarily uses C# for scripting, but it does support C++ through
+        the Unity Scripting Backend for C++ (IL2CPP). However, most developers and
+        assets in the Unity community use C#.
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

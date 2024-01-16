@@ -4,6 +4,7 @@ using UnityEditor;
 using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
+using Unity.Mathematics;
 
 
 namespace UAA
@@ -346,7 +347,7 @@ namespace UAA
             EditorGUILayout.LabelField("Chat History", EditorStyles.boldLabel);
             _scrollPositionChatHistory = EditorGUILayout.BeginScrollView(_scrollPositionChatHistory, GUILayout.Height(640));
 
-            totalHeight = -475f;
+            totalHeight = -600f;
 
             for (int i = 1; i < ChatHistory.Count; i++)
             {
@@ -359,25 +360,22 @@ namespace UAA
                     messageRole = "\n" + message.role + ": ";
 
                 _roleStyle.normal.textColor = message.role == "user" ? Color.magenta : Color.cyan;
-                GUIContent roleContent = new GUIContent(messageRole);
-                float roleHeight = _roleStyle.CalcHeight(roleContent, EditorGUIUtility.currentViewWidth);
-                Rect roleRect = GUILayoutUtility.GetRect(roleContent, _roleStyle, GUILayout.Height(roleHeight));
-                EditorGUI.DrawRect(roleRect, ChatHistoryColor);
+                GUIContent role = new GUIContent(messageRole);
+                float roleHeight = _roleStyle.CalcHeight(role, EditorGUIUtility.currentViewWidth);
+                Rect roleRect = GUILayoutUtility.GetRect(role, _roleStyle, GUILayout.Height(roleHeight));
+                //EditorGUI.DrawRect(roleRect, ChatHistoryColor);
                 EditorGUI.SelectableLabel(roleRect, messageRole, _roleStyle);
 
-                GUIContent contentContent = new GUIContent(message.content);
-                float contentHeight = _messageStyle.CalcHeight(contentContent, EditorGUIUtility.currentViewWidth);
-                Rect contentRect = GUILayoutUtility.GetRect(contentContent, _messageStyle, GUILayout.Height(contentHeight));
-                Rect backgroundRect = new Rect(contentRect.x, contentRect.y, contentRect.width, contentHeight);
-                EditorGUI.DrawRect(backgroundRect, ChatHistoryColor);
-                contentRect = new Rect(contentRect.x + 10, contentRect.y, contentRect.width - 20, contentHeight);
+                GUIContent content = new GUIContent(message.content);
+                float contentHeight = _messageStyle.CalcHeight(content, EditorGUIUtility.currentViewWidth);
+                Rect contentRect = GUILayoutUtility.GetRect(content, _messageStyle, GUILayout.Height(contentHeight));
+                EditorGUI.DrawRect(contentRect, ChatHistoryColor);
                 EditorGUI.SelectableLabel(contentRect, message.content, _messageStyle);
 
                 totalHeight += roleHeight + contentHeight;
             }
 
             EditorGUILayout.EndScrollView();
-
 
             EditorGUILayout.LabelField("Message The Assistant...", EditorStyles.boldLabel);
             _scrollPositionUserChatMessage = EditorGUILayout.BeginScrollView(_scrollPositionUserChatMessage, GUILayout.Height(100));
@@ -388,11 +386,13 @@ namespace UAA
             {
                 if (_onEnter)
                     UserChatMessage = UserChatMessage.TrimEnd('\n');
-
+            
                 SendMessage();
+
                 _scrollPositionChatHistory.y = Mathf.Infinity;
                 Repaint();
             }
+
             if (GUILayout.Button("Stop Generating"))
             {
                 StopGenerating();

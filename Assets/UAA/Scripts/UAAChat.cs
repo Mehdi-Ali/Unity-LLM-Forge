@@ -31,11 +31,11 @@ namespace UAA
 
         public static void RefreshChatHistory()
         {
-            string[] guids = AssetDatabase.FindAssets($"t:{nameof(UAAChatHistorySO)}", new[] { ChatHistoryFolderPath });
-            UAAWindow.SavedChatHistoryPaths = new string[guids.Length];
-            for (int i = 0; i < guids.Length; i++)
+            string[] chatHistories = AssetDatabase.FindAssets($"t:{nameof(UAAChatHistorySO)}", new[] { ChatHistoryFolderPath });
+            UAAWindow.SavedChatHistoryPaths = new string[chatHistories.Length];
+            for (int i = 0; i < chatHistories.Length; i++)
             {
-                UAAWindow.SavedChatHistoryPaths[i] = AssetDatabase.GUIDToAssetPath(guids[i]);
+                UAAWindow.SavedChatHistoryPaths[i] = AssetDatabase.GUIDToAssetPath(chatHistories[i]);
             }
         }
 

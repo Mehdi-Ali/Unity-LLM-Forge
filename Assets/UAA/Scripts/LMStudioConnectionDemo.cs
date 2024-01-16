@@ -17,7 +17,6 @@ namespace UAA
         [SerializeField, TextArea(3, 20)] private string _systemMessage;
         [SerializeField, Range(0, 1)] float _temperature = 0.7f;
         [SerializeField] int _maxTokens = -1;
-        [SerializeField] bool _stream = false;
         [SerializeField] private List<Message> _chatHistory = new List<Message>();
         [SerializeField, TextArea(3, 1000)] private string _assistantMessage;
         [SerializeField, TextArea(3, 1000)] private string _userMessage;
@@ -28,8 +27,7 @@ namespace UAA
         {
             _chatHistory.Clear();
             _chatHistory.Add(new Message { role = "system", content = _systemMessage });
-            _chatHistory.Add(new Message { role = "user", content = _userMessage });
-            StartCoroutine(LLMChat());
+            SendMessage();
         }
 
         [Button]
@@ -44,7 +42,7 @@ namespace UAA
         {
             float temperature = _temperature;
             int max_tokens = _maxTokens;
-            bool stream = _stream;
+            bool stream = false;
 
             var llm = UnityWebRequest.PostWwwForm(url, "POST");
             string jsonMessage = JsonConvert.SerializeObject(new LocalLLMRequestInput
@@ -59,7 +57,7 @@ namespace UAA
             llm.uploadHandler = new UploadHandlerRaw(bytesMessage);
             llm.SetRequestHeader("Content-Type", "application/json");
 
-            DisplayResponse("Sending message...");
+            DisplayResponse("Typing...");
 
             yield return llm.SendWebRequest();
 
@@ -77,7 +75,6 @@ namespace UAA
 
         private void DisplayResponse(string message)
         {
-            // _output.text = message;
             _assistantMessage = message;
         }
     }

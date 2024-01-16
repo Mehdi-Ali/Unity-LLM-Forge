@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LocalURL: http://localhost:1234/v1/chat/completions
   OpenAIURL: https://api.openai.com/v1/chat/completions
-  OpenAI_API_Key: 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
+  OpenAI_API_Key: sk-r...
   OpenAI_API_model: gpt-4-1106-preview
   LocalLLM: 1
   Temperature: 0.2

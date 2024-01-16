@@ -41,7 +41,6 @@ namespace UAA
     [Serializable]
     public class LocalLLMResponse
     {
-        public string id;
         public List<LocalLLMChoice> choices;
     }
 

@@ -206,7 +206,8 @@ namespace UAA
         private static Vector2 _scrollPositionSimplifyCommandToTasksPrompt;
         private static Vector2 _scrollPositionTaskToScriptPrompt;
         private static Vector2 _scrollPositionCorrectScriptPrompt;
-        private static float totalHeight;
+        private static readonly float _messagesPadding = 20f;
+        private static float _totalHeight;
 
         GUIStyle _roleStyle;
         GUIStyle _messageStyle;
@@ -347,7 +348,7 @@ namespace UAA
             EditorGUILayout.LabelField("Chat History", EditorStyles.boldLabel);
             _scrollPositionChatHistory = EditorGUILayout.BeginScrollView(_scrollPositionChatHistory, GUILayout.Height(640));
 
-            totalHeight = -600f;
+            _totalHeight = -600f;
 
             for (int i = 1; i < ChatHistory.Count; i++)
             {
@@ -367,12 +368,12 @@ namespace UAA
                 EditorGUI.SelectableLabel(roleRect, messageRole, _roleStyle);
 
                 GUIContent content = new GUIContent(message.content);
-                float contentHeight = _messageStyle.CalcHeight(content, EditorGUIUtility.currentViewWidth);
+                float contentHeight = _messageStyle.CalcHeight(content, EditorGUIUtility.currentViewWidth) + _messagesPadding;
                 Rect contentRect = GUILayoutUtility.GetRect(content, _messageStyle, GUILayout.Height(contentHeight));
                 EditorGUI.DrawRect(contentRect, ChatHistoryColor);
                 EditorGUI.SelectableLabel(contentRect, message.content, _messageStyle);
 
-                totalHeight += roleHeight + contentHeight;
+                _totalHeight += roleHeight + contentHeight;
             }
 
             EditorGUILayout.EndScrollView();
@@ -481,7 +482,7 @@ namespace UAA
                     RemoveAssistantStreamingMessages(messages);
                     messages.Add(new Message { role = "assistant", content = messageContent });
 
-                    if (_scrollPositionChatHistory.y > totalHeight * 0.75 && !isCommand)
+                    if (_scrollPositionChatHistory.y > _totalHeight * 0.75 && !isCommand)
                         _scrollPositionChatHistory.y = Mathf.Infinity;
                 });
             }

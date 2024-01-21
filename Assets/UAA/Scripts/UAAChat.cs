@@ -85,6 +85,7 @@ namespace UAA
             UAAWindow.ChatHistory.Add(new Message { role = "user", content = UAAWindow.UserChatMessage });
             UAAWindow.UserChatMessage = "";
             _ = UAAWindow.LLMChat();
+            UAAWindow.ChatHistory.RemoveAt(UAAWindow.ChatHistory.Count - 1);
         }
 
         public static void SaveChatHistory(bool setIndex = true, bool isCommand = false)

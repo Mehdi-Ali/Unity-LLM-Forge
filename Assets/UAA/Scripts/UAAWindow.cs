@@ -212,7 +212,7 @@ namespace UAA
         GUIStyle _roleStyle;
         GUIStyle _messageStyle;
 
-        private int _selectedTab = 0;
+        private static int _selectedTab = 0;
         private Color _backgroundColor;
         private Color ChatHistoryColor;
 
@@ -222,6 +222,9 @@ namespace UAA
         private static void ShowWindow()
         {
             GetWindow<UAAWindow>("UAA");
+            SavedChatHistory = null;
+            selectedChatHistoryIndex = -1;
+            _selectedTab = 1;
         }
 
         private void OnGUI()

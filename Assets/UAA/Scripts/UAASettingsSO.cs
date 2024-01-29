@@ -29,6 +29,7 @@ namespace UAA
         public bool SaveOnLoad = false;
         public bool CallOnAwake = false;
         public bool SaveOnClose = false;
+        public int SelectedTab = 1;
         public Color GUIBackgroundColor = new(0.2705882f, 0.3452933f, 0.3607843f, 1f);
 
         [Header("Paths")]

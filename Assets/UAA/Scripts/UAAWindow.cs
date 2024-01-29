@@ -184,6 +184,12 @@ namespace UAA
             set => Settings.SaveOnClose = value;
         }
 
+        private static int SelectedTab
+        {
+            get => Settings.SelectedTab;
+            set => Settings.SelectedTab = value;
+        }
+
         public static OpenAIModels SelectedOpenAIModel;
         private readonly Dictionary<OpenAIModels, string> _modelToString = new()
         {
@@ -212,7 +218,6 @@ namespace UAA
         GUIStyle _roleStyle;
         GUIStyle _messageStyle;
 
-        private static int _selectedTab = 0;
         private Color _backgroundColor;
         private Color ChatHistoryColor;
 
@@ -224,7 +229,6 @@ namespace UAA
             GetWindow<UAAWindow>("UAA");
             SavedChatHistory = null;
             selectedChatHistoryIndex = -1;
-            _selectedTab = 1;
         }
 
         private void OnGUI()
@@ -234,13 +238,13 @@ namespace UAA
             _onEnter = (Event.current.type == EventType.KeyUp && Event.current.keyCode == KeyCode.Return && !Event.current.shift);
 
             string[] tabs = { "UAA Profile", "UAA Chat", "UAA Command" };
-            _selectedTab = GUILayout.Toolbar(_selectedTab, tabs);
+            SelectedTab = GUILayout.Toolbar(SelectedTab, tabs);
 
             GUILayout.BeginHorizontal();
             {
                 GUILayout.Space(15);
                 _scrollPositionGeneral = EditorGUILayout.BeginScrollView(_scrollPositionGeneral, GUILayout.Height(this.position.height - 30));
-                switch (_selectedTab)
+                switch (SelectedTab)
                 {
                     case 0:
                         ProfileTab();
@@ -291,9 +295,9 @@ namespace UAA
 
             }
 
-            MaxIterationsBeforeRestarting = EditorGUILayout.IntSlider("Max Iteration Before Restarting", MaxIterationsBeforeRestarting, 2 , 15);
+            MaxIterationsBeforeRestarting = EditorGUILayout.IntSlider("Max Iteration Before Restarting", MaxIterationsBeforeRestarting, 2, 15);
             EditorGUILayout.LabelField("Profile Description");
-        
+
             _scrollPositionSystemMessage = EditorGUILayout.BeginScrollView(_scrollPositionSystemMessage, GUILayout.Height(200));
             SystemMessage = GUILayout.TextArea(SystemMessage, GUILayout.ExpandHeight(true));
             EditorGUILayout.EndScrollView();
@@ -390,7 +394,7 @@ namespace UAA
             {
                 if (_onEnter)
                     UserChatMessage = UserChatMessage.TrimEnd('\n');
-            
+
                 SendMessage();
 
                 _scrollPositionChatHistory.y = Mathf.Infinity;
@@ -494,7 +498,7 @@ namespace UAA
                 messages.Add(new Message { role = "assistant", content = "Crafting a response…" });
                 string messageContent = await UAAConnection.SendAndReceiveNonStreamedMessages(llmInput);
                 messages.RemoveAt(messages.Count - 1);
-                messages.Add(new Message { role = Role.assistant.ToString() , content = messageContent });
+                messages.Add(new Message { role = Role.assistant.ToString(), content = messageContent });
             }
 
             if (!isCommand)
@@ -538,7 +542,7 @@ namespace UAA
             IsLLMAvailable = true;
             UAAConnection.StopGenerating();
 
-            if (_selectedTab == 2)
+            if (SelectedTab == 2)
                 UAACommand.IsCommandAborted = true;
         }
 

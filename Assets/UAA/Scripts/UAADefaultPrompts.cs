@@ -41,6 +41,7 @@ namespace UAA
                                 " - It doesn’t provide any editor window. It immediately does the task when the menu item is invoked.\n" +
                                 " - Don’t use GameObject.FindGameObjectsWithTag.\n" +
                                 " - There is no selected object. Find game objects manually.\n" +
+                                " - DO NOT use instantiate(Resources.Load(\"StandardSphere\").\n" +
                                 " - I only need the script body. Don’t add any explanation.\n" +
                                 " - Do not over engineer stuff and make the script as simple as possible \n" +
                                 " - To Create and / or Instantiate primitive objects you need to call the function through UnityEngine.Object.Instantiate(), example of a cube creation: GameObject.CreatePrimitive(PrimitiveType.Cube), a bad example of a sphere creation nityEngine.Object.Instantiate(Resources.Load(\"StandardSphere\")) \n" +

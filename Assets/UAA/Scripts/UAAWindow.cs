@@ -317,7 +317,7 @@ namespace UAA
             TaskToScriptPrompt = GUILayout.TextArea(TaskToScriptPrompt, GUILayout.ExpandHeight(true));
             EditorGUILayout.EndScrollView();
 
-            EditorGUILayout.LabelField("Scripting Debugging Task");
+            EditorGUILayout.LabelField("Script Debugging Task");
             _scrollPositionCorrectScriptPrompt = EditorGUILayout.BeginScrollView(_scrollPositionCorrectScriptPrompt, GUILayout.Height(75));
             CorrectScriptPrompt = GUILayout.TextArea(CorrectScriptPrompt, GUILayout.ExpandHeight(true));
             EditorGUILayout.EndScrollView();
@@ -542,8 +542,13 @@ namespace UAA
             IsLLMAvailable = true;
             UAAConnection.StopGenerating();
 
-            if (SelectedTab == 2)
-                UAACommand.IsCommandAborted = true;
+            if (SelectedTab != 2)
+                return;
+
+            UAACommand.IsCommandAborted = true;
+            UAACommand.IsCorrectingScript = false;
+            UAACommand.CorrectingState = CorrectingStates.NotFixing;
+            
         }
 
         private static void LogMessages(List<Message> messages)

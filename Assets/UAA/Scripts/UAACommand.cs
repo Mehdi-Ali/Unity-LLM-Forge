@@ -52,13 +52,13 @@ namespace UAA
             set => Settings.Prompts.CorrectScriptPrompt = value;
         }
 
-        private static bool IsCorrectingScript
+        public static bool IsCorrectingScript
         {
             get => Settings.IsCorrectingScript;
             set => Settings.IsCorrectingScript = value;
         }
 
-        private static CorrectingStates CorrectingState
+        public static CorrectingStates CorrectingState
         {
             get => Settings.CorrectingState;
             set => Settings.CorrectingState = value;
@@ -94,7 +94,7 @@ namespace UAA
 
         [InitializeOnLoadMethod]
         public static async void Resume()
-        {           
+        {
             await Task.Delay(1000);
             switch (CorrectingState)
             {
@@ -155,7 +155,8 @@ namespace UAA
 
         private static async void HandleTask(string task)
         {
-            LLMInput = UAAConnection.CreateLLMInput(TaskToScriptPrompt, "The task is described as follows:\n" + task);
+            LLMInput = UAAConnection.CreateLLMInput(TaskToScriptPrompt, "Please remember that: " + TaskToScriptPrompt +
+                                                                        "The task is described as follows:\n" + task);
             await CreateScript();
         }
 
@@ -189,6 +190,7 @@ namespace UAA
             {
                 Debug.Log("Command Stopped");
                 IsCommandAborted = false;
+
                 return;
             }
 
@@ -237,15 +239,18 @@ namespace UAA
             Resume();
         }
 
-        public static void ExecuteScript()
+        public static void ExecuteScript(bool continueLoop = false)
         {
             if (!TempFileExists)
                 return;
 
-            CorrectingState = CorrectingStates.FixingRuntimeErrors;
-
             EditorApplication.ExecuteMenuItem("Edit/Do Task");
-            Resume();
+
+            if (continueLoop)
+            {
+                CorrectingState = CorrectingStates.FixingRuntimeErrors;
+                Resume();
+            }
         }
 
         public static void DeleteGeneratedScript()
@@ -261,7 +266,7 @@ namespace UAA
             else
             {
                 CorrectingState = CorrectingStates.NotFixing;
-                ExecuteScript();
+                ExecuteScript(true);
             }
         }
 

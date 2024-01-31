@@ -251,6 +251,8 @@ namespace UAA
             _cts?.Cancel(); // CancellationTokenSource
             _post?.Abort(); // in cas of UnityWebRequest
             _client?.Dispose(); // in case of HttpClient
+
+            UAACommand.IsCommandAborted = false;
         }
     }
 }

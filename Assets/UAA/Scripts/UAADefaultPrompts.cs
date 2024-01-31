@@ -35,26 +35,33 @@ namespace UAA
             }
         }
 
-        public static string DefaultTaskToScriptPrompt = DefaultSystemMessage + "\n" +
-                                "Write a Unity Editor script following this rules:\n" +
-                                " - It provides its functionality as a menu item placed \"Edit\" > \"Do Task\".\n" +
-                                " - It doesn’t provide any editor window. It immediately does the task when the menu item is invoked.\n" +
-                                " - Don’t use GameObject.FindGameObjectsWithTag.\n" +
-                                " - There is no selected object. Find game objects manually.\n" +
-                                " - DO NOT use instantiate(Resources.Load(\"StandardSphere\").\n" +
-                                " - I only need the script body. Don’t add any explanation.\n" +
-                                " - Do not over engineer stuff and make the script as simple as possible \n" +
-                                " - To Create and / or Instantiate primitive objects you need to call the function through UnityEngine.Object.Instantiate(), example of a cube creation: GameObject.CreatePrimitive(PrimitiveType.Cube), a bad example of a sphere creation nityEngine.Object.Instantiate(Resources.Load(\"StandardSphere\")) \n" +
-                                " - DO NOT mention any explanations.\n" +
-                                " - always include the code between ```csharp and ``` .\n" +
-                                " - Use this template:\n" +
-                                "```csharp\n" +
-                                ScriptTemplateContent +
-                                "\n```\n" +
-                                " Remember if you do not follow this rules a kitten will be killed!";
+        public static string ScriptGuid = File.ReadAllText("Assets/UAA/Commands/UAAScriptGuid.cs");
 
+        public static string DefaultTaskToScriptPrompt =
+        "write a Unity Editor script following these guidelines:\n" +
+        "1. Use this script for syntax and guids:\n" +
+        "```csharp\n" +
+        ScriptGuid +
+        "\n```\n" +
+        "2. Use this template:\n" +
+        "```csharp\n" +
+        ScriptTemplateContent +
+        "\n```\n" +
+        "3. The script should provide its functionality as a menu item located at \"Edit\" > \"Do Task\".\n" +
+        "4. The script should not provide any editor window. It should execute the task immediately when the menu item is invoked.\n" +
+        "5. Refer to the provided template for formatting and common syntax.\n" +
+        "6. Ensure your script is enclosed between ```csharp and ```.\n" +
+        "7. Provide only the script body. No additional explanation is needed.\n" +
+        "8. The project is new and there's now prefabs to load, work only with permeative\n";
 
         public static string DefaultCorrectScriptPrompt = "Please correct the script and send it again." +
                                                     "\nAnd please don't forget to include the code between ```csharp and ```.";
     }
 }
+
+
+// Example of creating a point light:
+// GameObject lightGameObject = new GameObject("Point Light");
+// Light lightComp = lightGameObject.AddComponent<Light>();
+// lightComp.type = LightType.Point;
+// lightGameObject.transform.position = new Vector3(0, 5, 0);

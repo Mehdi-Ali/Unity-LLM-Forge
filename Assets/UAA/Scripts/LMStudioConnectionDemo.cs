@@ -40,17 +40,13 @@ namespace UAA
 
         private IEnumerator LLMChat()
         {
-            float temperature = _temperature;
-            int max_tokens = _maxTokens;
-            bool stream = false;
-
             var llm = UnityWebRequest.PostWwwForm(url, "POST");
             string jsonMessage = JsonConvert.SerializeObject(new LocalLLMRequestInput
             {
                 messages = _chatHistory,
-                temperature = temperature,
-                max_tokens = max_tokens,
-                stream = stream
+                temperature = _temperature,
+                max_tokens = _maxTokens,
+                stream = false
             });
 
             byte[] bytesMessage = Encoding.UTF8.GetBytes(jsonMessage);

@@ -26,6 +26,7 @@ namespace UAA
             }
         }
 
+        public static bool CommunicationError = false;
         public static bool IsCommandAborted = false;
 
         public static LocalLLMRequestInput LLMInput
@@ -88,6 +89,10 @@ namespace UAA
         {
             if (type == LogType.Error || type == LogType.Exception)
             {
+                // TODO add a list of errors to ignore instead of hard coding them:
+                if (logString.Contains("Instantiating material due to calling renderer.material during edit mode"))
+                    return;
+                
                 ErrorLogs += " * " + logString + "\n" + stackTrace + "\n\n";
             }
         }
@@ -155,8 +160,9 @@ namespace UAA
 
         private static async void HandleTask(string task)
         {
-            LLMInput = UAAConnection.CreateLLMInput(TaskToScriptPrompt, "Please remember that: " + TaskToScriptPrompt +
-                                                                        "The task is described as follows:\n" + task);
+            //"Please remember that: " + TaskToScriptPrompt +
+
+            LLMInput = UAAConnection.CreateLLMInput(TaskToScriptPrompt, "The task is described as follows:\n" + task);
             await CreateScript();
         }
 
@@ -185,6 +191,14 @@ namespace UAA
                 // }
                 UAAWindow.GeneratedString = generatedScript;
             });
+
+            if (CommunicationError)
+            {
+                Debug.Log("Communication Error");
+                CommunicationError = false;
+
+                return;
+            }
 
             if (IsCommandAborted)
             {

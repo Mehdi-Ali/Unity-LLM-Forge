@@ -210,10 +210,12 @@ namespace UAA
             catch (OperationCanceledException)
             {
                 Debug.Log("Request was cancelled.");
+                UAACommand.CommunicationError = true;
             }
             catch (Exception ex)
             {
                 Debug.Log("An error occurred: " + ex.Message);
+                UAACommand.CommunicationError = true;
             }
             finally
             {

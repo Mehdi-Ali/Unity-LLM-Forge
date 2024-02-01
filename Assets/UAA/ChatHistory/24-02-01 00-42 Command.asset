@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc3319f0508093d4f81e5a24857103ab, type: 3}
+  m_Name: 24-02-01 00-42 Command
+  m_EditorClassIdentifier: 
+  ChatHistory:
+  - role: system
+    content: "write a Unity Editor script following these guidelines:\n1. Use this
+      script for syntax and guids:\n```csharp\nusing System.Collections;\r\nusing
+      System.Collections.Generic;\r\nusing UnityEngine;\r\n\r\npublic class UAAScriptGuid
+      : MonoBehaviour\r\n{\r\n    private static void Examples()\r\n    {\r\n       
+      // This is how you can creating a primitive objects:\r\n        GameObject
+      cube = GameObject.CreatePrimitive(PrimitiveType.Cube);\r\n        // the available 
+      objects are: Sphere, Capsule, Cylinder, Cube, Plane, and Quad.\r\n\r\n       
+      // If you want to change anything related to material, create one first like
+      this:\r\n        Material mat = new(Shader.Find(\"Universal Render Pipeline/Lit\"));\r\n       
+      // !! And DO NOT Get the MeshRenderer and change it's properties\r\n       
+      cube.GetComponent<MeshRenderer>().material.color = Color.green;\r\n    }\r\n}\r\n\r\n\n```\n2.
+      Use this template:\n```csharp\nusing UnityEngine;\r\nusing UnityEditor;\r\n\r\npublic
+      class UAAGeneratedScript_temp : EditorWindow\r\n{\r\n    [MenuItem(\"Edit/Do
+      Task\")]\r\n    private static void DoTask()\r\n    {\r\n        \r\n    }\r\n}\r\n\n```\n3.
+      The script should provide its functionality as a menu item located at \"Edit\"
+      > \"Do Task\".\n4. The script should not provide any editor window. It should
+      execute the task immediately when the menu item is invoked.\n5. Refer to the
+      provided template for formatting and common syntax.\n6. Ensure your script
+      is enclosed between ```csharp and ```.\n7. Provide only the script body. No
+      additional explanation is needed.\n8. The project is new and there's now prefabs
+      to load, work only with permeative\n"
+  - role: user
+    content: "Please remember that: write a Unity Editor script following these guidelines:\n1.
+      Use this script for syntax and guids:\n```csharp\nusing System.Collections;\r\nusing
+      System.Collections.Generic;\r\nusing UnityEngine;\r\n\r\npublic class UAAScriptGuid
+      : MonoBehaviour\r\n{\r\n    private static void Examples()\r\n    {\r\n       
+      // This is how you can creating a primitive objects:\r\n        GameObject
+      cube = GameObject.CreatePrimitive(PrimitiveType.Cube);\r\n        // the available 
+      objects are: Sphere, Capsule, Cylinder, Cube, Plane, and Quad.\r\n\r\n       
+      // If you want to change anything related to material, create one first like
+      this:\r\n        Material mat = new(Shader.Find(\"Universal Render Pipeline/Lit\"));\r\n       
+      // !! And DO NOT Get the MeshRenderer and change it's properties\r\n       
+      cube.GetComponent<MeshRenderer>().material.color = Color.green;\r\n    }\r\n}\r\n\r\n\n```\n2.
+      Use this template:\n```csharp\nusing UnityEngine;\r\nusing UnityEditor;\r\n\r\npublic
+      class UAAGeneratedScript_temp : EditorWindow\r\n{\r\n    [MenuItem(\"Edit/Do
+      Task\")]\r\n    private static void DoTask()\r\n    {\r\n        \r\n    }\r\n}\r\n\n```\n3.
+      The script should provide its functionality as a menu item located at \"Edit\"
+      > \"Do Task\".\n4. The script should not provide any editor window. It should
+      execute the task immediately when the menu item is invoked.\n5. Refer to the
+      provided template for formatting and common syntax.\n6. Ensure your script
+      is enclosed between ```csharp and ```.\n7. Provide only the script body. No
+      additional explanation is needed.\n8. The project is new and there's now prefabs
+      to load, work only with permeative\nThe task is described as follows:\nCreate
+      10 primitive spheres at random positions with random colors\n."

@@ -27,7 +27,12 @@ namespace UAA
         }
 
         public static bool CommunicationError = false;
-        public static bool IsCommandAborted = false;
+
+        public static bool IsCommandAborted
+        {
+            get => Settings.IsCommandAborted;
+            set => Settings.IsCommandAborted = value;
+        }
 
         public static LocalLLMRequestInput LLMInput
         {
@@ -118,6 +123,7 @@ namespace UAA
         {
             CorrectingState = CorrectingStates.NotFixing;
             IsCorrectingScript = false;
+            IsCommandAborted = false;
 
             if (string.IsNullOrEmpty(UAAWindow.UserCommandMessage))
                 UAAWindow.UserCommandMessage = UAADefaultPrompts.DefaultUserCommandMessage;
@@ -250,7 +256,7 @@ namespace UAA
             var flags = BindingFlags.Static | BindingFlags.NonPublic;
             var method = typeof(ProjectWindowUtil).GetMethod("CreateScriptAssetWithContent", flags);
             method.Invoke(null, new object[] { TempFilePath, code });
-            Resume();
+            // Resume();
         }
 
         public static void ExecuteScript(bool continueLoop = false)
@@ -258,7 +264,7 @@ namespace UAA
             if (!TempFileExists)
                 return;
 
-            EditorApplication.ExecuteMenuItem("Edit/Do Task");
+            EditorApplication.ExecuteMenuItem("Edit/UAA - Unity AI Assistant/Execute");
 
             if (continueLoop)
             {

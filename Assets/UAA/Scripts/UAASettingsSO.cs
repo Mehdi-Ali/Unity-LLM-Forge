@@ -39,8 +39,10 @@ namespace UAA
 
         [Header("Runtime / cache")]
         public bool IsLLMAvailable = true;
+        public bool IsCommandAborted = false;
         public bool IsCorrectingScript = false;
         public CorrectingStates CorrectingState = CorrectingStates.NotFixing;
+
 
         [Button()]
         public void ClearCache()
@@ -49,6 +51,7 @@ namespace UAA
             CachedLLMInput = new();
             ErrorLogs = "";
             IsLLMAvailable = true;
+            IsCommandAborted = false;
             IsCorrectingScript = false;
             CorrectingState = CorrectingStates.NotFixing;
         }

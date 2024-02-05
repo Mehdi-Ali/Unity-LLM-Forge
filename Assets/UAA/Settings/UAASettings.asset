@@ -31,6 +31,7 @@ MonoBehaviour:
   TempFilePath: Assets/UAA/Commands/UAAGeneratedScript_temp.cs
   SettingsPath: Assets/UAA/Settings/UAASettings.asset
   IsLLMAvailable: 1
+  IsCommandAborted: 0
   IsCorrectingScript: 0
   CorrectingState: 0
   CachedChatHistory: []
@@ -84,15 +85,15 @@ MonoBehaviour:
       // !! And DO NOT Get the MeshRenderer and change it's properties\r\n       
       cube.GetComponent<MeshRenderer>().material.color = Color.green;\r\n    }\r\n}\r\n\r\n\n```\n2.
       Use this template:\n```csharp\nusing UnityEngine;\r\nusing UnityEditor;\r\n\r\npublic
-      class UAAGeneratedScript_temp : EditorWindow\r\n{\r\n    [MenuItem(\"Edit/Do
-      Task\")]\r\n    private static void DoTask()\r\n    {\r\n        \r\n    }\r\n}\r\n\n```\n3.
-      The script should provide its functionality as a menu item located at \"Edit\"
-      > \"Do Task\".\n4. The script should not provide any editor window. It should
-      execute the task immediately when the menu item is invoked.\n5. Refer to the
-      provided template for formatting and common syntax.\n6. Ensure your script
-      is enclosed between ```csharp and ```.\n7. Provide only the script body. No
-      additional explanation is needed.\n8. The project is new and there's now prefabs
-      to load, work only with permeative\n"
+      class UAAGeneratedScript_temp : EditorWindow\r\n{\r\n    [MenuItem(\"Edit/UAA
+      - Unity AI Assistant/Execute\")]\r\n    private static void DoTask()\r\n   
+      {\r\n        \r\n    }\r\n}\r\n\n```\n3. The script should provide its functionality
+      as a menu item located at \"Edit\" > \"Do Task\".\n4. The script should not
+      provide any editor window. It should execute the task immediately when the
+      menu item is invoked.\n5. Refer to the provided template for formatting and
+      common syntax.\n6. Ensure your script is enclosed between ```csharp and ```.\n7.
+      Provide only the script body. No additional explanation is needed.\n8. The
+      project is new and there's now prefabs to load, work only with permeative\n"
     _correctScriptPrompt: 'Please correct the script and send it again.
 
       And

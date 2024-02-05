@@ -30,7 +30,7 @@ namespace UAA
             {
                 string template = File.ReadAllText("Assets/UAA/Commands/UAAScriptTemplate.cs");
                 template = template.Replace("ScriptTemplate", "GeneratedScript_temp");
-                template = template.Replace("//[MenuItem(\"Edit/Do Task\")]", "[MenuItem(\"Edit/Do Task\")]");
+                template = template.Replace("//[MenuItem(\"Edit/UAA - Unity AI Assistant/Execute\")]", "[MenuItem(\"Edit/UAA - Unity AI Assistant/Execute\")]");
                 return template;
             }
         }

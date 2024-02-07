@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 
 namespace UAA
@@ -119,7 +120,7 @@ namespace UAA
             }
         }
 
-        public static async void InitializeCommand()
+        public static async void InitializeNewCommand()
         {
             CorrectingState = CorrectingStates.NotFixing;
             IsCorrectingScript = false;
@@ -172,12 +173,12 @@ namespace UAA
             await CreateScript();
         }
 
-        private static async Task CreateScript(bool isUpdatingScript = false)
+        private static async Task CreateScript()
         {
 
             if (LLMInput.messages.Count > MaxIterationsBeforeRestarting * 2 + 1)
             {
-                InitializeCommand();
+                InitializeNewCommand();
                 return;
             }
 
@@ -224,7 +225,7 @@ namespace UAA
             });
 
             CorrectingState = CorrectingStates.FixingIDErrors;
-            CreateScriptAsset(script, isUpdatingScript);
+            CreateScriptAsset(script);
         }
 
         private static string GetOnlyScript(string script)
@@ -236,27 +237,41 @@ namespace UAA
             return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
         }
 
-        private static void CreateScriptAsset(string code, bool isUpdatingScript)
+        private static void CreateScriptAsset(string code)
         {
-            if (isUpdatingScript)
-                AssetDatabase.DeleteAsset(TempFilePath);
-
             IsCorrectingScript = false;
 
-            if (TempFileExists)
-            {
-                var previousCode = System.IO.File.ReadAllText(TempFilePath);
-                if (previousCode == code)
-                {
-                    InitializeCommand();
-                    return;
-                }
-            }
+            // if (TempFileExists)
+            // {
+            //     var previousCode = System.IO.File.ReadAllText(TempFilePath);
+            //     if (previousCode == code)
+            //     {
+            //         InitializeNewCommand();
+            //         return;
+            //     }
+            // }
 
+            InvokeCreateScriptAssetWithContent(TempFilePath, code);
+            ForceRecompile();
+            Resume();
+        }
+
+        private static void ForceRecompile()
+        {
+            Debug.Log("ForceRecompile");
+
+            var tempPath = "Assets/UAA/Commands/temp.cs";
+            if (System.IO.File.Exists(tempPath))
+                AssetDatabase.DeleteAsset(tempPath);
+            
+            InvokeCreateScriptAssetWithContent(tempPath, "");
+        }
+
+        private static void InvokeCreateScriptAssetWithContent(string path, string code)
+        {
             var flags = BindingFlags.Static | BindingFlags.NonPublic;
             var method = typeof(ProjectWindowUtil).GetMethod("CreateScriptAssetWithContent", flags);
-            method.Invoke(null, new object[] { TempFilePath, code });
-            // Resume();
+            method.Invoke(null, new object[] { path, code });
         }
 
         public static void ExecuteScript(bool continueLoop = false)
@@ -317,7 +332,7 @@ namespace UAA
 
             ErrorLogs = null;
             UAAWindow.GeneratedString = "Correcting...";
-            await CreateScript(true);
+            await CreateScript();
         }
 
         public static void ClearLog()

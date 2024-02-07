@@ -534,7 +534,7 @@ namespace UAA
             if (IsLLMAvailable == false)
                 return;
 
-            UAACommand.InitializeCommand();
+            UAACommand.InitializeNewCommand();
         }
 
         private void StopGenerating()

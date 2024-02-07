@@ -73,27 +73,28 @@ MonoBehaviour:
       Simplify the next
       command to a list of small simple tasks following this format: - Task 1: do
       something. - Task 2: do something else -... '
-    _taskToScriptPrompt: "write a Unity Editor script following these guidelines:\n1.
-      Use this script for syntax and guids:\n```csharp\nusing System.Collections;\r\nusing
-      System.Collections.Generic;\r\nusing UnityEngine;\r\n\r\npublic class UAAScriptGuid
-      : MonoBehaviour\r\n{\r\n    private static void Examples()\r\n    {\r\n       
-      // This is how you can creating a primitive objects:\r\n        GameObject
-      cube = GameObject.CreatePrimitive(PrimitiveType.Cube);\r\n        // the available 
-      objects are: Sphere, Capsule, Cylinder, Cube, Plane, and Quad.\r\n\r\n       
-      // If you want to change anything related to material, create one first like
-      this:\r\n        Material mat = new(Shader.Find(\"Universal Render Pipeline/Lit\"));\r\n       
-      // !! And DO NOT Get the MeshRenderer and change it's properties\r\n       
-      cube.GetComponent<MeshRenderer>().material.color = Color.green;\r\n    }\r\n}\r\n\r\n\n```\n2.
+    _taskToScriptPrompt: "Please write a Unity Editor script following these guidelines:\n1.
+      Use this script for syntax and guids:\n```csharp\nusing UnityEditor;\r\nusing
+      UnityEngine;\r\n\r\npublic class UAAScriptGuid : MonoBehaviour\r\n{\r\n   
+      private static void Examples()\r\n    {\r\n        // This is how you can creating
+      a primitive objects:\r\n        GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);\r\n       
+      // the available  objects are: Sphere, Capsule, Cylinder, Cube, Plane, and
+      Quad.\r\n\r\n        // If you want to change anything related to material,
+      create one first like this:\r\n        Material mat = new(Shader.Find(\"Universal
+      Render Pipeline/Lit\"));\r\n        // !! And DO NOT Get the MeshRenderer and
+      change it's properties\r\n        cube.GetComponent<MeshRenderer>().material.color
+      = Color.green;\r\n\r\n        // This is how you can create a prefabs in the
+      scene\r\n        var prefabPath = \"Assets/Resources_moved/Prefabs/Prefab.prefab\";\r\n       
+      UnityEngine.Object prefab = AssetDatabase.LoadAssetAtPath(prefabPath, typeof(GameObject));\r\n       
+      GameObject player = Instantiate(prefab) as GameObject;\r\n    }\r\n}\r\n\r\n\n```\n2.
       Use this template:\n```csharp\nusing UnityEngine;\r\nusing UnityEditor;\r\n\r\npublic
       class UAAGeneratedScript_temp : EditorWindow\r\n{\r\n    [MenuItem(\"Edit/UAA
       - Unity AI Assistant/Execute\")]\r\n    private static void DoTask()\r\n   
       {\r\n        \r\n    }\r\n}\r\n\n```\n3. The script should provide its functionality
       as a menu item located at \"Edit\" > \"Do Task\".\n4. The script should not
       provide any editor window. It should execute the task immediately when the
-      menu item is invoked.\n5. Refer to the provided template for formatting and
-      common syntax.\n6. Ensure your script is enclosed between ```csharp and ```.\n7.
-      Provide only the script body. No additional explanation is needed.\n8. The
-      project is new and there's now prefabs to load, work only with permeative\n"
+      menu item is invoked.\n5. Ensure your script is enclosed between ```csharp
+      and ```.\n6. Provide only the script body. No additional explanation is needed.\n"
     _correctScriptPrompt: 'Please correct the script and send it again.
 
       And

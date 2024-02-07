@@ -38,7 +38,7 @@ namespace UAA
         public static string ScriptGuid = File.ReadAllText("Assets/UAA/Commands/UAAScriptGuid.cs");
 
         public static string DefaultTaskToScriptPrompt =
-        "write a Unity Editor script following these guidelines:\n" +
+        "Please write a Unity Editor script following these guidelines:\n" +
         "1. Use this script for syntax and guids:\n" +
         "```csharp\n" +
         ScriptGuid +
@@ -49,10 +49,8 @@ namespace UAA
         "\n```\n" +
         "3. The script should provide its functionality as a menu item located at \"Edit\" > \"Do Task\".\n" +
         "4. The script should not provide any editor window. It should execute the task immediately when the menu item is invoked.\n" +
-        "5. Refer to the provided template for formatting and common syntax.\n" +
-        "6. Ensure your script is enclosed between ```csharp and ```.\n" +
-        "7. Provide only the script body. No additional explanation is needed.\n" +
-        "8. The project is new and there's now prefabs to load, work only with permeative\n";
+        "5. Ensure your script is enclosed between ```csharp and ```.\n" +
+        "6. Provide only the script body. No additional explanation is needed.\n";
 
         public static string DefaultCorrectScriptPrompt = "Please correct the script and send it again." +
                                                     "\nAnd please don't forget to include the code between ```csharp and ```.";

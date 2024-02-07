@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 public class UAAScriptGuid : MonoBehaviour
@@ -14,6 +13,11 @@ public class UAAScriptGuid : MonoBehaviour
         Material mat = new(Shader.Find("Universal Render Pipeline/Lit"));
         // !! And DO NOT Get the MeshRenderer and change it's properties
         cube.GetComponent<MeshRenderer>().material.color = Color.green;
+
+        // This is how you can create a prefabs in the scene
+        var prefabPath = "Assets/Resources_moved/Prefabs/Prefab.prefab";
+        UnityEngine.Object prefab = AssetDatabase.LoadAssetAtPath(prefabPath, typeof(GameObject));
+        GameObject player = Instantiate(prefab) as GameObject;
     }
 }
 

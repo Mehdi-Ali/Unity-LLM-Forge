@@ -193,9 +193,9 @@ namespace UAA
         public static OpenAIModels SelectedOpenAIModel;
         private readonly Dictionary<OpenAIModels, string> _modelToString = new()
         {
-            { OpenAIModels.GPT_4_Turbo, "gpt-4-1106-preview" },
+            { OpenAIModels.GPT_4_Turbo, "gpt-4-turbo" },
             { OpenAIModels.GPT_4, "gpt-4" },
-            { OpenAIModels.GPT_3_5_Turbo, "gpt-3.5-turbo-1106" },
+            { OpenAIModels.GPT_3_5_Turbo, "gpt-3.5-turbo" },
         };
 
         private static bool _onEnter;
